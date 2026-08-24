@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% block title %}Excel Remisión{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+  <h4><i class="bi bi-file-earmark-excel me-2 text-primary"></i>Remisión por Persona que Atiende</h4>
+  {% if datos %}
+  <a href="{{ url_for('informes.remision_excel', fecha_desde=fecha_desde, fecha_hasta=fecha_hasta, persona_id=persona_id, formato='excel') }}"
+     class="btn btn-success btn-sm">
+    <i class="bi bi-download me-1"></i>Descargar Excel
+  </a>
+  {% endif %}
+</div>
+
+<div class="card mb-3"><div class="card-body py-2">
+  <form class="row g-2 align-items-center" method="GET">
+    <div class="col-md-2"><label class="form-label small mb-0">Desde</label>
+      <input type="date" class="form-control form-control-sm" name="fecha_desde" value="{{ fecha_desde }}" required></div>
+    <div class="col-md-2"><label class="form-label small mb-0">Hasta</label>
+      <input type="date" class="form-control form-control-sm" name="fecha_hasta" value="{{ fecha_hasta }}" required></div>
+    <div class="col-md-3"><label class="form-label small mb-0">Persona</label>
+      <select class="form-select form-select-sm" name="persona_id">
+        <option value="">— Todas —</option>
+        {% for p in personas %}
+        <option value="{{ p.id }}" {{ 'selected' if persona_id == p.id|string }}>{{ p.nombre_completo }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-auto d-flex align-items-end">
+      <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-search me-1"></i>Ver</button>
+    </div>
+  </form>
+</div></div>
+
+{% if datos is not none %}
+{% if datos %}
+<div class="card"><div class="card-body p-0">
+  <table class="table table-hover table-sm mb-0">
+    <thead class="table-light">
+      <tr>
+        <th>Persona</th>
+        <th>Paciente</th>
+        <th>Documento</th>
+        <th>Fecha</th>
+        <th>Exámenes</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% set persona_actual = namespace(val='') %}
+      {% for a in datos %}
+      {% set persona_nombre = a.persona_atiende.nombre_completo if a.persona_atiende else 'Sin asignar' %}
+      {% if persona_nombre != persona_actual.val %}
+        {% set persona_actual.val = persona_nombre %}
+        <tr class="table-secondary">
+          <td colspan="5" class="fw-semibold">
+            <i class="bi bi-person-workspace me-1"></i>{{ persona_nombre }}
+            {% if a.persona_atiende and a.persona_atiende.cargo %}
+            <small class="text-muted">({{ a.persona_atiende.cargo }})</small>
+            {% endif %}
+          </td>
+        </tr>
+      {% endif %}
+      <tr>
+        <td></td>
+        <td>{{ a.paciente.nombre_completo if a.paciente else '—' }}</td>
+        <td>{{ a.paciente.identificacion if a.paciente else '—' }}</td>
+        <td>{{ a.fecha_atencion.strftime('%d/%m/%Y') }}</td>
+        <td class="small">
+          {% for d in a.detalles %}
+          {{ d.cups.descripcion if d.cups else d.cups_codigo }}{% if not loop.last %}, {% endif %}
+          {% endfor %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<div class="card-footer text-muted small">{{ datos|length }} atención(es)</div>
+</div>
+{% else %}
+<div class="alert alert-info">No hay atenciones para el período seleccionado.</div>
+{% endif %}
+{% endif %}
+{% endblock %}

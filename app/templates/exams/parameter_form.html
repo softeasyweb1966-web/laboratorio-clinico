@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Editar' if param else 'Nuevo' }} Parámetro – {{ exam.name }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-9">
+    <h4><i class="bi bi-sliders me-2"></i>{{ 'Editar' if param else 'Nuevo' }} Parámetro
+      <small class="text-muted fs-6 ms-2">{{ exam.name }}</small>
+    </h4>
+    <hr>
+    <form method="post" id="paramForm" class="card p-4 shadow-sm">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Nombre del parámetro *</label>
+          <input type="text" name="name" class="form-control" value="{{ param.name if param else '' }}" required>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Tipo de resultado</label>
+          <select name="result_type" class="form-select" id="resultType">
+            <option value="decimal" {{ 'selected' if not param or param.result_type=='decimal' }}>Decimal</option>
+            <option value="integer" {{ 'selected' if param and param.result_type=='integer' }}>Entero</option>
+            <option value="text" {{ 'selected' if param and param.result_type=='text' }}>Texto</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Unidades por defecto</label>
+          <input type="text" name="default_units" class="form-control" value="{{ param.default_units if param else '' }}" placeholder="mg/dL, g/L, ...">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Orden</label>
+          <input type="number" name="order_index" class="form-control" value="{{ param.order_index if param else 0 }}" min="0">
+        </div>
+        <div class="col-md-3">
+          <div class="form-check mt-4">
+            <input type="checkbox" class="form-check-input" name="is_fixed" id="isFixed" {{ 'checked' if param and param.is_fixed }}>
+            <label class="form-check-label" for="isFixed">Campo fijo</label>
+          </div>
+        </div>
+        <div class="col-md-7" id="fixedValueRow" style="{{ '' if param and param.is_fixed else 'display:none' }}">
+          <label class="form-label">Valor fijo</label>
+          <input type="text" name="fixed_value" class="form-control" value="{{ param.fixed_value if param else '' }}">
+        </div>
+        <div class="col-12">
+          <label class="form-label">Notas internas</label>
+          <textarea name="notes" class="form-control" rows="2">{{ param.notes if param else '' }}</textarea>
+        </div>
+      </div>
+
+      <!-- Reference Values -->
+      <div class="mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 class="mb-0">Valores de referencia</h6>
+          <button type="button" class="btn btn-sm btn-outline-primary" id="addRefBtn">
+            <i class="bi bi-plus me-1"></i>Agregar rango
+          </button>
+        </div>
+        <div id="refValuesContainer">
+          {% if ref_values %}
+            {% for rv in ref_values %}
+            <div class="ref-value-row border rounded p-3 mb-2 bg-light">
+              {% include "exams/_ref_value_row.html" with context %}
+            </div>
+            {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="d-flex gap-2 mt-3">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i>Guardar</button>
+        <a href="{{ url_for('exams.exam_detail', exam_id=exam.id) }}" class="btn btn-secondary">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Template for a new reference value row -->
+<template id="refRowTemplate">
+  <div class="ref-value-row border rounded p-3 mb-2 bg-light">
+    {% set rv = none %}
+    {% include "exams/_ref_value_row.html" %}
+  </div>
+</template>
+
+<script>
+document.getElementById('isFixed').addEventListener('change', function() {
+  document.getElementById('fixedValueRow').style.display = this.checked ? '' : 'none';
+});
+
+document.getElementById('addRefBtn').addEventListener('click', function() {
+  const tpl = document.getElementById('refRowTemplate').innerHTML;
+  const div = document.createElement('div');
+  div.innerHTML = tpl;
+  document.getElementById('refValuesContainer').appendChild(div.firstElementChild);
+  initRefRow(div.firstElementChild);
+});
+
+function initRefRow(row) {
+  const refTypeSelect = row.querySelector('.ref-type-select');
+  if (refTypeSelect) {
+    refTypeSelect.addEventListener('change', function() { toggleRefFields(row, this.value); });
+    toggleRefFields(row, refTypeSelect.value);
+  }
+  row.querySelector('.remove-ref-btn')?.addEventListener('click', function() {
+    row.remove();
+  });
+}
+
+function toggleRefFields(row, refType) {
+  row.querySelector('.range-fields').style.display = (refType === 'range') ? '' : 'none';
+  row.querySelector('.exact-fields').style.display = (refType === 'exact') ? '' : 'none';
+  row.querySelector('.text-fields').style.display = (refType === 'text') ? '' : 'none';
+}
+
+document.querySelectorAll('.ref-value-row').forEach(row => initRefRow(row));
+</script>
+{% endblock %}

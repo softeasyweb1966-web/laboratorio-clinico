@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block title %}Atención {{ atencion.nro_consecutivo }}{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+  <h4><i class="bi bi-clipboard-check me-2 text-primary"></i>Atención {{ atencion.nro_consecutivo }}</h4>
+  <div class="d-flex gap-2">
+    {% if atencion.estado == 'Ingresado' %}
+    <form method="POST" action="{{ url_for('atenciones.anular', consecutivo=atencion.nro_consecutivo) }}"
+          onsubmit="return confirm('¿Confirma anular esta atención?')">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-x-circle me-1"></i>Anular</button>
+    </form>
+    {% endif %}
+    <a href="{{ url_for('atenciones.lista') }}" class="btn btn-outline-secondary btn-sm">Volver</a>
+  </div>
+</div>
+<div class="row g-3">
+  <div class="col-md-6">
+    <div class="card h-100"><div class="card-header">Datos de la Atención</div><div class="card-body">
+      <dl class="row mb-0">
+        <dt class="col-sm-5">Consecutivo</dt><dd class="col-sm-7"><strong>{{ atencion.nro_consecutivo }}</strong></dd>
+        <dt class="col-sm-5">Fecha</dt><dd class="col-sm-7">{{ atencion.fecha_atencion.strftime('%d/%m/%Y') }}</dd>
+        <dt class="col-sm-5">Estado</dt>
+        <dd class="col-sm-7">
+          <span class="badge {% if atencion.estado == 'Ingresado' %}bg-primary{% elif atencion.estado == 'Prefacturado' %}bg-warning text-dark{% elif atencion.estado == 'Anulado' %}bg-danger{% else %}bg-success{% endif %}">
+            {{ atencion.estado }}
+          </span>
+        </dd>
+        <dt class="col-sm-5">Autorización</dt><dd class="col-sm-7">{{ atencion.autorizacion or '—' }}</dd>
+        {% if atencion.autorizacion_transporte %}
+        <dt class="col-sm-5">Aut. Transporte</dt><dd class="col-sm-7 text-warning">{{ atencion.autorizacion_transporte }}</dd>
+        {% endif %}
+        <dt class="col-sm-5">Ingresado</dt><dd class="col-sm-7">{{ atencion.fecha_hora_ingreso.strftime('%d/%m/%Y %H:%M') }}</dd>
+        <dt class="col-sm-5">Usuario</dt><dd class="col-sm-7">{{ atencion.usuario_ingresa.nombre if atencion.usuario_ingresa else '—' }}</dd>
+      </dl>
+    </div></div>
+  </div>
+  <div class="col-md-6">
+    <div class="card h-100"><div class="card-header">Paciente y Empresa</div><div class="card-body">
+      <dl class="row mb-0">
+        <dt class="col-sm-5">Paciente</dt>
+        <dd class="col-sm-7">{{ atencion.paciente.nombre_completo if atencion.paciente else atencion.paciente_id }}</dd>
+        <dt class="col-sm-5">Identificación</dt>
+        <dd class="col-sm-7">{{ atencion.paciente_id }}</dd>
+        <dt class="col-sm-5">Empresa</dt>
+        <dd class="col-sm-7">{{ atencion.cliente.nombre if atencion.cliente else '—' }}</dd>
+        <dt class="col-sm-5">Forma Pago</dt><dd class="col-sm-7">{{ atencion.forma_pago.nombre if atencion.forma_pago else '—' }}</dd>
+        <dt class="col-sm-5">Abono</dt><dd class="col-sm-7">$ {{ '{:,.0f}'.format(atencion.abono_cliente or 0) }}</dd>
+        <dt class="col-sm-5">Saldo Empresa</dt>
+        <dd class="col-sm-7 text-danger fw-bold">$ {{ '{:,.0f}'.format(atencion.saldo_empresa or 0) }}</dd>
+      </dl>
+    </div></div>
+  </div>
+  <div class="col-12">
+    <div class="card"><div class="card-header">Exámenes / Procedimientos</div><div class="card-body p-0">
+      <table class="table table-hover mb-0">
+        <thead><tr><th>Sec.</th><th>Código</th><th>Descripción</th><th class="text-end">Valor</th></tr></thead>
+        <tbody>
+          {% for d in atencion.detalles %}
+          <tr>
+            <td>{{ d.secuencia }}</td>
+            <td><strong>{{ d.cups_codigo }}</strong></td>
+            <td>{{ d.cups.descripcion if d.cups else '—' }}
+              {% if d.cups and d.cups.es_transporte %}<span class="badge bg-info text-dark ms-1">Transporte</span>{% endif %}
+            </td>
+            <td class="text-end">$ {{ '{:,.0f}'.format(d.valor) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr class="table-light fw-bold">
+            <td colspan="3" class="text-end">TOTAL</td>
+            <td class="text-end">$ {{ '{:,.0f}'.format(atencion.valor_total) }}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div></div>
+  </div>
+</div>
+{% endblock %}

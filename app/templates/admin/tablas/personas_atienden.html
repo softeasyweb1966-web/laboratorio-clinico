@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% block title %}Personas que Atienden{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+  <h4><i class="bi bi-person-workspace me-2 text-primary"></i>Personas que Atienden</h4>
+  <button class="btn btn-primary btn-sm" onclick="nuevo()"><i class="bi bi-plus-lg me-1"></i>Nueva Persona</button>
+</div>
+<div class="card">
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr><th>Tipo ID</th><th>Identificación</th><th>Nombre Completo</th><th>Cargo</th><th>Celular</th><th>Estado</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for p in personas %}
+        <tr>
+          <td>{{ p.tipo_identificacion }}</td>
+          <td><strong>{{ p.identificacion }}</strong></td>
+          <td>{{ p.apellidos }}, {{ p.nombres }}</td>
+          <td>{{ p.cargo or '—' }}</td>
+          <td>{{ p.celular or '—' }}</td>
+          <td><span class="badge {{ 'badge-activo' if p.estado else 'badge-inactivo' }}">{{ 'Activo' if p.estado else 'Inactivo' }}</span></td>
+          <td>
+            <div class="d-flex gap-1">
+              <button class="btn btn-sm btn-outline-primary"
+                onclick='editar({{ p.id }}, "{{ p.tipo_identificacion }}", "{{ p.identificacion }}", "{{ p.nombres }}", "{{ p.apellidos }}", "{{ p.cargo or "" }}", "{{ p.celular or "" }}", {{ "true" if p.estado else "false" }})'>
+                <i class="bi bi-pencil"></i>
+              </button>
+              <a href="{{ url_for('admin.persona_atiende_toggle', id=p.id) }}"
+                 class="btn btn-sm btn-outline-{{ 'danger' if p.estado else 'success' }}"
+                 onclick="return confirm('¿Confirmar?')">
+                <i class="bi bi-{{ 'toggle-on' if p.estado else 'toggle-off' }}"></i>
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="text-center text-muted py-4">No hay personas registradas.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="modal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form method="POST" action="{{ url_for('admin.persona_atiende_guardar') }}" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="id" id="fId">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalTitle">Nueva Persona</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-3">
+              <label class="form-label">Tipo ID</label>
+              <select class="form-select" name="tipo_identificacion" id="fTipoId">
+                <option value="CC">CC</option>
+                <option value="CE">CE</option>
+                <option value="PA">PA</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Identificación <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" name="identificacion" id="fIdentificacion" required>
+            </div>
+            <div class="col-md-5">
+              <label class="form-label">Cargo</label>
+              <input type="text" class="form-control" name="cargo" id="fCargo"
+                     placeholder="Ej: Bacterióloga, Auxiliar...">
+            </div>
+            <div class="col-md-5">
+              <label class="form-label">Nombres <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" name="nombres" id="fNombres" required>
+            </div>
+            <div class="col-md-5">
+              <label class="form-label">Apellidos <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" name="apellidos" id="fApellidos" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Celular</label>
+              <input type="text" class="form-control" name="celular" id="fCelular">
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+              <div class="form-check form-switch mb-2">
+                <input class="form-check-input" type="checkbox" name="estado" id="fEstado" checked>
+                <label class="form-check-label" for="fEstado">Activa</label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function nuevo() {
+  document.getElementById('modalTitle').textContent = 'Nueva Persona';
+  document.getElementById('fId').value = '';
+  document.getElementById('fTipoId').value = 'CC';
+  document.getElementById('fIdentificacion').value = '';
+  document.getElementById('fNombres').value = '';
+  document.getElementById('fApellidos').value = '';
+  document.getElementById('fCargo').value = '';
+  document.getElementById('fCelular').value = '';
+  document.getElementById('fEstado').checked = true;
+  new bootstrap.Modal(document.getElementById('modal')).show();
+}
+function editar(id, tipoId, ident, nombres, apellidos, cargo, celular, estado) {
+  document.getElementById('modalTitle').textContent = 'Editar Persona';
+  document.getElementById('fId').value = id;
+  document.getElementById('fTipoId').value = tipoId;
+  document.getElementById('fIdentificacion').value = ident;
+  document.getElementById('fNombres').value = nombres;
+  document.getElementById('fApellidos').value = apellidos;
+  document.getElementById('fCargo').value = cargo;
+  document.getElementById('fCelular').value = celular;
+  document.getElementById('fEstado').checked = estado;
+  new bootstrap.Modal(document.getElementById('modal')).show();
+}
+</script>
+{% endblock %}

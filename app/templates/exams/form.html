@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Editar' if exam else 'Nuevo' }} Examen{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <h4><i class="bi bi-journal-medical me-2"></i>{{ 'Editar' if exam else 'Nuevo' }} Examen</h4>
+    <hr>
+    <form method="post" class="card p-4 shadow-sm">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">Código *</label>
+          <input type="text" name="code" class="form-control text-uppercase" value="{{ exam.code if exam else '' }}" required
+                 {{ 'readonly' if exam }} placeholder="Ej: HEM, GLU">
+        </div>
+        <div class="col-md-8">
+          <label class="form-label">Nombre del examen *</label>
+          <input type="text" name="name" class="form-control" value="{{ exam.name if exam else '' }}" required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Categoría</label>
+          <select name="category" class="form-select">
+            <option value="human" {{ 'selected' if not exam or exam.category=='human' }}>Humanos</option>
+            <option value="veterinary" {{ 'selected' if exam and exam.category=='veterinary' }}>Veterinaria</option>
+            <option value="other" {{ 'selected' if exam and exam.category=='other' }}>Otro</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Tipo de muestra</label>
+          <input type="text" name="sample_type" class="form-control" value="{{ exam.sample_type if exam else '' }}" placeholder="Sangre venosa, orina...">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Equipo</label>
+          <input type="text" name="equipment" class="form-control" value="{{ exam.equipment if exam else '' }}">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Técnica</label>
+          <input type="text" name="technique" class="form-control" value="{{ exam.technique if exam else '' }}">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Método</label>
+          <input type="text" name="method" class="form-control" value="{{ exam.method if exam else '' }}">
+        </div>
+        <div class="col-12">
+          <label class="form-label">Descripción</label>
+          <textarea name="description" class="form-control" rows="3">{{ exam.description if exam else '' }}</textarea>
+        </div>
+        <div class="col-12 d-flex gap-2">
+          <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i>Guardar</button>
+          <a href="{{ url_for('exams.list_exams') }}" class="btn btn-secondary">Cancelar</a>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

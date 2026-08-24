@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% block title %}Nueva Prefactura{% endblock %}
+{% block content %}
+<div class="page-header"><h4><i class="bi bi-file-earmark-plus me-2 text-primary"></i>Nueva Prefactura</h4></div>
+<div class="card"><div class="card-body">
+  <form method="POST" id="formPF" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="row g-3">
+      <div class="col-md-5">
+        <label class="form-label">Cliente / Empresa <span class="text-danger">*</span></label>
+        <select class="form-select" name="cliente_id" id="clienteSel" required onchange="cargarAtenciones()">
+          <option value="">— Seleccione —</option>
+          {% for c in clientes %}
+          <option value="{{ c.id }}">{{ c.codigo }} — {{ c.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Desde</label>
+        <input type="date" class="form-control" name="fecha_desde" id="fechaDesde">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Hasta</label>
+        <input type="date" class="form-control" name="fecha_hasta" id="fechaHasta">
+      </div>
+      <div class="col-auto d-flex align-items-end">
+        <button type="button" class="btn btn-outline-primary btn-sm" onclick="cargarAtenciones()">
+          <i class="bi bi-search me-1"></i>Buscar
+        </button>
+      </div>
+    </div>
+    <div id="seccionAtenciones" class="mt-4" style="display:none">
+      <h6 class="text-muted text-uppercase fw-semibold mb-2" style="font-size:.78rem">Atenciones Pendientes</h6>
+      <div class="table-responsive">
+        <table class="table table-sm table-hover" id="tablaAten">
+          <thead class="table-light">
+            <tr>
+              <th><input type="checkbox" id="chkAll" onclick="toggleAll(this)"></th>
+              <th>Consecutivo</th><th>Paciente</th><th>Fecha</th><th class="text-end">Valor</th>
+            </tr>
+          </thead>
+          <tbody id="bodyAten"><tr><td colspan="5" class="text-center text-muted py-3">Cargando...</td></tr></tbody>
+          <tfoot><tr><td colspan="4" class="text-end fw-bold">TOTAL SELECCIONADO:</td>
+            <td class="text-end fw-bold text-primary" id="totalSel">$ 0</td></tr></tfoot>
+        </table>
+      </div>
+      <div class="d-flex gap-2 mt-3">
+        <button type="submit" class="btn btn-success"><i class="bi bi-check-circle me-1"></i>Generar Prefactura</button>
+        <a href="{{ url_for('cartera.prefacturas') }}" class="btn btn-outline-secondary">Cancelar</a>
+      </div>
+    </div>
+  </form>
+</div></div>
+{% endblock %}
+{% block scripts %}
+<script>
+function cargarAtenciones() {
+  var cid = document.getElementById('clienteSel').value;
+  var fechaDesde = document.getElementById('fechaDesde').value;
+  var fechaHasta = document.getElementById('fechaHasta').value;
+  if (!cid) return;
+  var params = new URLSearchParams();
+  if (fechaDesde) params.set('fecha_desde', fechaDesde);
+  if (fechaHasta) params.set('fecha_hasta', fechaHasta);
+  fetch('/cartera/api/atenciones-pendientes/' + cid + '?' + params.toString())
+    .then(r => r.json())
+    .then(data => {
+      var tbody = document.getElementById('bodyAten');
+      document.getElementById('seccionAtenciones').style.display = 'block';
+      document.getElementById('chkAll').checked = false;
+      document.getElementById('totalSel').textContent = '$ 0';
+      if (data.error) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger py-3">' + data.error + '</td></tr>';
+        return;
+      }
+      if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">No hay atenciones pendientes.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = '';
+      data.forEach(function(a) {
+        var tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><input type="checkbox" name="atenciones_sel" value="${a.consecutivo}" onchange="calcularTotal()"></td>
+          <td><strong>${a.consecutivo}</strong></td>
+          <td>${a.paciente}</td>
+          <td>${a.fecha}</td>
+          <td class="text-end">$ ${Number(a.valor_total).toLocaleString('es-CO')}</td>`;
+        tbody.appendChild(tr);
+      });
+    });
+}
+function toggleAll(cb) {
+  document.querySelectorAll('input[name="atenciones_sel"]').forEach(c => { c.checked = cb.checked; });
+  calcularTotal();
+}
+function calcularTotal() {
+  var rows = document.querySelectorAll('#bodyAten tr');
+  var total = 0;
+  rows.forEach(function(tr) {
+    var chk = tr.querySelector('input[type=checkbox]');
+    if (chk && chk.checked) {
+      var val = tr.cells[4].textContent.replace(/[$ ,]/g, '');
+      total += parseFloat(val) || 0;
+    }
+  });
+  document.getElementById('totalSel').textContent = '$ ' + total.toLocaleString('es-CO');
+}
+</script>
+{% endblock %}

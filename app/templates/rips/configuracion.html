@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+{% block title %}Configuración RIPS{% endblock %}
+{% block content %}
+<div class="page-header"><h4><i class="bi bi-sliders me-2 text-primary"></i>Configuración RIPS</h4></div>
+<div class="row"><div class="col-md-9">
+  <div class="card"><div class="card-body">
+    <form method="POST" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <!-- Datos del prestador -->
+      <h6 class="text-muted text-uppercase fw-semibold mb-3" style="font-size:.78rem; letter-spacing:.5px;">
+        <i class="bi bi-building me-1"></i>Datos del Prestador / Facturador
+      </h6>
+      <div class="row g-3 mb-4">
+        <div class="col-md-4">
+          <label class="form-label">NIT del Facturador</label>
+          <input type="text" class="form-control" name="nit_facturador" value="{{ config.nit_facturador if config else '' }}">
+        </div>
+        <div class="col-md-5">
+          <label class="form-label">Razón Social</label>
+          <input type="text" class="form-control" name="razon_social" value="{{ config.razon_social if config else '' }}">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Código Habilitación</label>
+          <input type="text" class="form-control" name="codigo_habilitacion" value="{{ config.codigo_habilitacion if config else '' }}"
+                 placeholder="110013078603">
+        </div>
+      </div>
+
+      <!-- Documento del prestador para procedimientos -->
+      <h6 class="text-muted text-uppercase fw-semibold mb-3" style="font-size:.78rem; letter-spacing:.5px;">
+        <i class="bi bi-person-vcard me-1"></i>Documento Prestador en Procedimientos
+      </h6>
+      <div class="row g-3 mb-4">
+        <div class="col-md-3">
+          <label class="form-label">Tipo Documento</label>
+          <select class="form-select" name="tipo_doc_prestador">
+            <option value="CC" {{ 'selected' if not config or config.tipo_doc_prestador == 'CC' }}>CC</option>
+            <option value="CE" {{ 'selected' if config and config.tipo_doc_prestador == 'CE' }}>CE</option>
+            <option value="NIT" {{ 'selected' if config and config.tipo_doc_prestador == 'NIT' }}>NIT</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Nro. Documento</label>
+          <input type="text" class="form-control" name="num_doc_prestador"
+                 value="{{ config.num_doc_prestador if config else '' }}"
+                 placeholder="Ej: 1014207688">
+        </div>
+        <div class="col-md-5">
+          <div class="form-text mt-4">
+            <i class="bi bi-info-circle me-1"></i>Este dato se fija en cada procedimiento del JSON.
+          </div>
+        </div>
+      </div>
+
+      <!-- Campos fijos de procedimientos -->
+      <h6 class="text-muted text-uppercase fw-semibold mb-3" style="font-size:.78rem; letter-spacing:.5px;">
+        <i class="bi bi-gear me-1"></i>Campos Fijos de Procedimientos
+      </h6>
+      <div class="row g-3 mb-4">
+        <div class="col-md-3">
+          <label class="form-label">Vía Ingreso Servicio</label>
+          <input type="text" class="form-control" name="via_ingreso"
+                 value="{{ config.via_ingreso if config else '02' }}" maxlength="5">
+          <div class="form-text">viaIngresoServicioSalud</div>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Modalidad Grupo Srv.</label>
+          <input type="text" class="form-control" name="modalidad_atencion"
+                 value="{{ config.modalidad_atencion if config else '03' }}" maxlength="5">
+          <div class="form-text">modalidadGrupoServicioTecSal</div>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Grupo Servicios</label>
+          <input type="text" class="form-control" name="grupo_servicios"
+                 value="{{ config.grupo_servicios if config else '02' }}" maxlength="5">
+          <div class="form-text">grupoServicios</div>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Código Servicio</label>
+          <input type="text" class="form-control" name="cod_servicio"
+                 value="{{ config.cod_servicio if config else '739' }}" maxlength="10">
+          <div class="form-text">codServicio</div>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Finalidad Tecnología</label>
+          <input type="text" class="form-control" name="finalidad_tecnologia"
+                 value="{{ config.finalidad_tecnologia if config else '15' }}" maxlength="5">
+          <div class="form-text">finalidadTecnologiaSalud</div>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Concepto Recaudo</label>
+          <input type="text" class="form-control" name="concepto_recaudo"
+                 value="{{ config.concepto_recaudo if config else '05' }}" maxlength="5">
+          <div class="form-text">conceptoRecaudo</div>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Diagnóstico Principal</label>
+          <input type="text" class="form-control" name="cod_diagnostico_principal"
+                 value="{{ config.cod_diagnostico_principal if config else 'Z000' }}" maxlength="10">
+          <div class="form-text">codDiagnosticoPrincipal</div>
+        </div>
+      </div>
+
+      <!-- Datos del usuario -->
+      <h6 class="text-muted text-uppercase fw-semibold mb-3" style="font-size:.78rem; letter-spacing:.5px;">
+        <i class="bi bi-person me-1"></i>Campos Fijos de Usuarios
+      </h6>
+      <div class="row g-3 mb-4">
+        <div class="col-md-3">
+          <label class="form-label">Tipo Usuario RIPS</label>
+          <input type="text" class="form-control" name="tipo_usuario_rips"
+                 value="{{ config.tipo_usuario_rips if config else '11' }}" maxlength="5">
+          <div class="form-text">tipoUsuario</div>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Zona Territorial</label>
+          <input type="text" class="form-control" name="zona_territorial"
+                 value="{{ config.zona_territorial if config else '02' }}" maxlength="5">
+          <div class="form-text">codZonaTerritorialResidencia</div>
+        </div>
+      </div>
+
+      <!-- CUPS Transporte -->
+      <h6 class="text-muted text-uppercase fw-semibold mb-3" style="font-size:.78rem; letter-spacing:.5px;">
+        <i class="bi bi-bus-front me-1"></i>CUPS Transporte
+      </h6>
+      <div class="row g-3 mb-4">
+        <div class="col-md-5">
+          <label class="form-label">CUPS de Transporte</label>
+          <select class="form-select" name="cups_transporte">
+            <option value="">— Ninguno —</option>
+            {% for c in cups_transporte_list %}
+            <option value="{{ c.codigo }}" {{ 'selected' if config and config.cups_transporte == c.codigo }}>{{ c.codigo }} — {{ c.descripcion }}</option>
+            {% endfor %}
+          </select>
+          <div class="form-text">Habilita campo de autorización especial y descuenta abono.</div>
+        </div>
+      </div>
+
+      <div class="mt-4">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Guardar Configuración</button>
+      </div>
+    </form>
+  </div></div>
+</div></div>
+{% endblock %}

@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Laboratorio Clínico{% endblock %}</title>
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/results.css') }}" rel="stylesheet">
+  <style>
+    :root {
+      --color-primario: #0d6efd;
+      --color-sidebar: #1a2b4b;
+      --color-sidebar-hover: #2e4a7a;
+    }
+    body { background: #f0f2f5; font-size: 0.92rem; }
+
+    /* NAVBAR */
+    .navbar { background: var(--color-sidebar) !important; padding: 0 1rem; min-height: 52px; }
+    .navbar-brand { font-weight: 700; font-size: 1.1rem; color: #fff !important; letter-spacing: .5px; }
+    .navbar-brand span { color: #5bc0de; }
+    .nav-link { color: rgba(255,255,255,.85) !important; font-size: .87rem; padding: .5rem .75rem !important; }
+    .nav-link:hover, .nav-link.active { color: #fff !important; background: var(--color-sidebar-hover); border-radius: 4px; }
+    .dropdown-menu { border: none; box-shadow: 0 4px 16px rgba(0,0,0,.15); font-size: .87rem; border-radius: 8px; }
+    .dropdown-item { padding: .45rem 1rem; }
+    .dropdown-item:hover { background: #e8f0fe; color: var(--color-primario); }
+    .dropdown-divider { margin: .25rem 0; }
+
+    /* CONTENIDO */
+    .content-wrapper { padding: 1.5rem; min-height: calc(100vh - 52px); }
+    .page-header { margin-bottom: 1.25rem; }
+    .page-header h4 { font-weight: 600; color: #1a2b4b; margin: 0; }
+
+    /* CARDS */
+    .card { border: none; box-shadow: 0 2px 8px rgba(0,0,0,.08); border-radius: 10px; }
+    .card-header { background: #fff; border-bottom: 1px solid #e9ecef; font-weight: 600; padding: .75rem 1.25rem; border-radius: 10px 10px 0 0 !important; }
+
+    /* TABLAS */
+    .table th { background: #f8f9fa; font-weight: 600; font-size: .83rem; text-transform: uppercase; letter-spacing: .4px; color: #495057; }
+    .table td { vertical-align: middle; }
+    .table-hover tbody tr:hover { background: #f0f6ff; }
+
+    /* BADGES */
+    .badge-activo { background: #d1fae5; color: #065f46; }
+    .badge-inactivo { background: #fee2e2; color: #991b1b; }
+
+    /* STATS DASHBOARD */
+    .stat-card { border-left: 4px solid var(--color-primario); }
+    .stat-card .stat-icon { font-size: 2rem; opacity: .25; }
+    .stat-card .stat-num { font-size: 1.8rem; font-weight: 700; }
+
+    /* ALERTAS */
+    .alert { border-radius: 8px; border: none; }
+
+    /* FOOTER */
+    footer { background: #1a2b4b; color: rgba(255,255,255,.5); font-size: .78rem; padding: .5rem 1rem; }
+  </style>
+  {% block head %}{% endblock %}
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+{% if current_user.is_authenticated %}
+<!-- NAVBAR PRINCIPAL -->
+<nav class="navbar navbar-expand-lg">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="{{ url_for('main.index') }}">
+      <i class="bi bi-activity me-2"></i>Lab<span>Clínico</span>
+    </a>
+    <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
+      <i class="bi bi-list text-white fs-5"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navMain">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('main.index') }}">
+            <i class="bi bi-house-door me-1"></i>Menú Principal
+          </a>
+        </li>
+
+        <!-- ADMINISTRADOR -->
+        {% if current_user.tiene_permiso('admin') or current_user.rol == 'admin' %}
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#">
+            <i class="bi bi-gear me-1"></i>Administrador
+          </a>
+          <ul class="dropdown-menu">
+            <li><h6 class="dropdown-header">Tablas Pacientes</h6></li>
+            <li><a class="dropdown-item" href="{{ url_for('admin.paises') }}"><i class="bi bi-globe2 me-2"></i>Países</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('admin.departamentos') }}"><i class="bi bi-map me-2"></i>Departamentos</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('admin.municipios') }}"><i class="bi bi-geo-alt me-2"></i>Municipios / Localidades</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('admin.tipos_identificacion') }}"><i class="bi bi-card-text me-2"></i>Tipos de Identificación</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('admin.tipos_usuario_paciente') }}"><i class="bi bi-person-badge me-2"></i>Tipos de Usuario</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('admin.sexos') }}"><i class="bi bi-gender-ambiguous me-2"></i>Sexos</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><h6 class="dropdown-header">Tablas Sistema</h6></li>
+            <li><a class="dropdown-item" href="{{ url_for('admin.formas_pago') }}"><i class="bi bi-cash me-2"></i>Formas de Pago</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('admin.personas_atienden') }}"><i class="bi bi-person-workspace me-2"></i>Personas que Atienden</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('admin.numeracion') }}"><i class="bi bi-123 me-2"></i>Numeración Inicial</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><h6 class="dropdown-header">Tablas RIPS</h6></li>
+            <li><a class="dropdown-item" href="{{ url_for('rips.configuracion') }}"><i class="bi bi-sliders me-2"></i>Config RIPS</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="{{ url_for('admin.usuarios') }}"><i class="bi bi-people me-2"></i>Usuarios del Sistema</a></li>
+          </ul>
+        </li>
+        {% endif %}
+
+        <!-- CATÁLOGOS MAESTROS -->
+        {% if current_user.tiene_permiso('pacientes') %}
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#">
+            <i class="bi bi-person-lines-fill me-1"></i>Maestros
+          </a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{{ url_for('pacientes.lista') }}"><i class="bi bi-person-heart me-2"></i>Pacientes</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('clientes.lista') }}"><i class="bi bi-building me-2"></i>Clientes / Empresas</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('cups.lista') }}"><i class="bi bi-clipboard2-pulse me-2"></i>CUPS / Servicios</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="{{ url_for('listas.lista') }}"><i class="bi bi-tags me-2"></i>Listas de Precios</a></li>
+          </ul>
+        </li>
+        {% endif %}
+
+        <!-- ATENCIONES -->
+        {% if current_user.tiene_permiso('atenciones') %}
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#">
+            <i class="bi bi-clipboard-plus me-1"></i>Atenciones
+          </a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{{ url_for('atenciones.nueva') }}"><i class="bi bi-plus-circle me-2"></i>Apertura</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('atenciones.lista') }}"><i class="bi bi-search me-2"></i>Consultas</a></li>
+          </ul>
+        </li>
+        {% endif %}
+
+        <!-- CARTERA -->
+        {% if current_user.tiene_permiso('cartera') %}
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#">
+            <i class="bi bi-receipt me-1"></i>Cartera
+          </a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{{ url_for('cartera.prefacturas') }}"><i class="bi bi-file-earmark-text me-2"></i>Prefacturas</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('cartera.recaudos') }}"><i class="bi bi-cash-coin me-2"></i>Recaudos</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('cartera.movimiento') }}"><i class="bi bi-arrow-left-right me-2"></i>Movimiento Cartera</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('cartera.estado_cuenta') }}"><i class="bi bi-wallet2 me-2"></i>Estado de Cuenta</a></li>
+          </ul>
+        </li>
+        {% endif %}
+
+        <!-- RIPS -->
+        {% if current_user.tiene_permiso('rips') %}
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('rips.generar') }}">
+            <i class="bi bi-filetype-json me-1"></i>RIPS
+          </a>
+        </li>
+        {% endif %}
+
+        <!-- INFORMES -->
+        {% if current_user.tiene_permiso('informes') %}
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#">
+            <i class="bi bi-graph-up me-1"></i>Informes
+          </a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{{ url_for('informes.analisis_empresa') }}"><i class="bi bi-building-check me-2"></i>Análisis Empresa</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('informes.remision_excel') }}"><i class="bi bi-file-earmark-excel me-2"></i>Remisión por Persona</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('informes.index') }}"><i class="bi bi-bar-chart me-2"></i>Todos los Informes</a></li>
+          </ul>
+        </li>
+        {% endif %}
+
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#">
+            <i class="bi bi-clipboard2-check me-1"></i>Resultados
+          </a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{{ url_for('results.search') }}"><i class="bi bi-pencil-square me-2"></i>Registrar Resultado</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('results.list_results') }}"><i class="bi bi-list-check me-2"></i>Resultados Emitidos</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('orders.list_orders') }}"><i class="bi bi-file-text me-2"></i>Atenciones Integradas</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="{{ url_for('exams.list_exams') }}"><i class="bi bi-journal-medical me-2"></i>Catalogo de Examenes</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('pdf_config.list_configs') }}"><i class="bi bi-file-pdf me-2"></i>Configuracion PDF</a></li>
+          </ul>
+        </li>
+
+      </ul>
+
+      <!-- USUARIO -->
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#">
+            <i class="bi bi-person-circle me-1"></i>{{ current_user.nombre }}
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><a class="dropdown-item" href="{{ url_for('auth.cambiar_password') }}"><i class="bi bi-key me-2"></i>Cambiar Contraseña</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right me-2"></i>Cerrar Sesión</a></li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+{% endif %}
+
+<!-- MENSAJES FLASH -->
+<div id="flash-container" style="position:fixed; top:60px; right:16px; z-index:9999; min-width:280px; max-width:420px;">
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% for category, message in messages %}
+  <div class="alert alert-{{ 'danger' if category == 'danger' else ('warning' if category == 'warning' else ('info' if category == 'info' else 'success')) }} alert-dismissible fade show shadow-sm" role="alert">
+    <i class="bi bi-{{ 'x-circle' if category == 'danger' else ('exclamation-triangle' if category == 'warning' else ('info-circle' if category == 'info' else 'check-circle')) }} me-2"></i>
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  {% endfor %}
+{% endwith %}
+</div>
+
+<!-- CONTENIDO PRINCIPAL -->
+<div class="content-wrapper">
+  {% block content %}{% endblock %}
+</div>
+
+<!-- FOOTER -->
+<footer class="text-center">
+  Laboratorio Clínico &copy; {{ now.year if now else 2026 }} &mdash; Sistema de Gestión
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  // Auto-cerrar alerts después de 5 segundos
+  document.querySelectorAll('#flash-container .alert').forEach(function(a) {
+    setTimeout(function() {
+      var bsAlert = bootstrap.Alert.getOrCreateInstance(a);
+      bsAlert.close();
+    }, 5000);
+  });
+</script>
+{% block scripts %}{% endblock %}
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

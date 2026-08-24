@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block title %}Inicio — Laboratorio Clínico{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h4><i class="bi bi-house me-2 text-primary"></i>Panel Principal</h4>
+  <small class="text-muted">Bienvenido, <strong>{{ current_user.nombre }}</strong></small>
+</div>
+
+<!-- ESTADÍSTICAS -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-xl-3">
+    <div class="card stat-card h-100" style="border-left-color:#0d6efd;">
+      <div class="card-body d-flex align-items-center justify-content-between p-3">
+        <div>
+          <div class="text-muted small text-uppercase fw-semibold">Atenciones Hoy</div>
+          <div class="stat-num text-primary">{{ stats.atenciones_hoy }}</div>
+        </div>
+        <i class="bi bi-clipboard-plus stat-icon text-primary"></i>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="card stat-card h-100" style="border-left-color:#198754;">
+      <div class="card-body d-flex align-items-center justify-content-between p-3">
+        <div>
+          <div class="text-muted small text-uppercase fw-semibold">Pacientes Activos</div>
+          <div class="stat-num text-success">{{ stats.total_pacientes }}</div>
+        </div>
+        <i class="bi bi-people stat-icon text-success"></i>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="card stat-card h-100" style="border-left-color:#ffc107;">
+      <div class="card-body d-flex align-items-center justify-content-between p-3">
+        <div>
+          <div class="text-muted small text-uppercase fw-semibold">Clientes Activos</div>
+          <div class="stat-num text-warning">{{ stats.total_clientes }}</div>
+        </div>
+        <i class="bi bi-building stat-icon text-warning"></i>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="card stat-card h-100" style="border-left-color:#dc3545;">
+      <div class="card-body d-flex align-items-center justify-content-between p-3">
+        <div>
+          <div class="text-muted small text-uppercase fw-semibold">Pendientes de Facturar</div>
+          <div class="stat-num text-danger">{{ stats.atenciones_pendientes }}</div>
+        </div>
+        <i class="bi bi-exclamation-circle stat-icon text-danger"></i>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ACCESOS RÁPIDOS -->
+<div class="row g-3">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header"><i class="bi bi-lightning-charge me-2 text-warning"></i>Accesos Rápidos</div>
+      <div class="card-body">
+        <div class="row g-2">
+          {% if current_user.tiene_permiso('atenciones') %}
+          <div class="col-6 col-md-3">
+            <a href="{{ url_for('atenciones.nueva') }}" class="btn btn-outline-primary w-100 py-3 d-flex flex-column align-items-center gap-1">
+              <i class="bi bi-plus-circle-fill fs-4"></i><span class="small">Nueva Atención</span>
+            </a>
+          </div>
+          <div class="col-6 col-md-3">
+            <a href="{{ url_for('atenciones.lista') }}" class="btn btn-outline-secondary w-100 py-3 d-flex flex-column align-items-center gap-1">
+              <i class="bi bi-search fs-4"></i><span class="small">Consultar Atención</span>
+            </a>
+          </div>
+          {% endif %}
+          {% if current_user.tiene_permiso('pacientes') %}
+          <div class="col-6 col-md-3">
+            <a href="{{ url_for('pacientes.nuevo') }}" class="btn btn-outline-success w-100 py-3 d-flex flex-column align-items-center gap-1">
+              <i class="bi bi-person-plus-fill fs-4"></i><span class="small">Nuevo Paciente</span>
+            </a>
+          </div>
+          {% endif %}
+          {% if current_user.tiene_permiso('cartera') %}
+          <div class="col-6 col-md-3">
+            <a href="{{ url_for('cartera.prefactura_nueva') }}" class="btn btn-outline-warning w-100 py-3 d-flex flex-column align-items-center gap-1">
+              <i class="bi bi-receipt fs-4"></i><span class="small">Nueva Prefactura</span>
+            </a>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

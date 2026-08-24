@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% block title %}Generar RIPS{% endblock %}
+{% block content %}
+<div class="page-header"><h4><i class="bi bi-filetype-json me-2 text-primary"></i>Generación de RIPS</h4></div>
+<div class="row"><div class="col-md-8">
+  <div class="card"><div class="card-body">
+    <form method="POST" id="formRips" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="row g-3">
+        <div class="col-md-5">
+          <label class="form-label">Fecha Desde <span class="text-danger">*</span></label>
+          <input type="date" class="form-control" name="fecha_desde" id="fechaDesde" required>
+        </div>
+        <div class="col-md-5">
+          <label class="form-label">Fecha Hasta <span class="text-danger">*</span></label>
+          <input type="date" class="form-control" name="fecha_hasta" id="fechaHasta" required>
+        </div>
+        <div class="col-md-7">
+          <label class="form-label">Cliente / Empresa <span class="text-danger">*</span></label>
+          <select class="form-select" name="cliente_id" id="clienteRips" required onchange="verificarParticular()">
+            <option value="">— Seleccione —</option>
+            {% for c in clientes %}<option value="{{ c.id }}" data-codigo="{{ c.codigo }}" data-tipo-usuario="{{ c.tipo_usuario_rips or '12' }}">{{ c.codigo }} — {{ c.nombre }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="col-md-5">
+          <label class="form-label">Número de Factura <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" name="num_factura" id="numFactura" required
+                 placeholder="Ej: FZ159">
+          <div class="form-text">Cada RIPS se genera asociado a una factura.</div>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Tipo de Usuario</label>
+          <input type="text" class="form-control" name="tipo_usuario_override" id="tipoUsuarioRips"
+                 value="12" maxlength="5" placeholder="12">
+          <div class="form-text">Se trae del cliente. Puede cambiarlo.</div>
+        </div>
+      </div>
+
+      <!-- Sección PARTICULAR: seleccionar pacientes -->
+      <div id="seccionParticular" class="mt-4" style="display:none;">
+        <div class="alert alert-warning py-2">
+          <i class="bi bi-exclamation-triangle me-1"></i>
+          Para <strong>PARTICULAR</strong>: seleccione los pacientes que pertenecen a esta factura.
+        </div>
+        <button type="button" class="btn btn-outline-primary btn-sm mb-2" onclick="buscarPacientesRips()">
+          <i class="bi bi-search me-1"></i>Buscar atenciones del período
+        </button>
+        <div class="table-responsive" style="max-height:300px; overflow-y:auto;">
+          <table class="table table-sm table-hover" id="tablaPacientesRips">
+            <thead class="table-light sticky-top">
+              <tr>
+                <th><input type="checkbox" id="chkAllRips" onclick="toggleAllRips(this)"></th>
+                <th>Consecutivo</th><th>Paciente</th><th>Fecha</th><th class="text-end">Valor</th>
+              </tr>
+            </thead>
+            <tbody id="bodyPacientesRips">
+              <tr><td colspan="5" class="text-center text-muted py-3">Presione "Buscar" para ver las atenciones.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="alert alert-info mt-3 py-2 small">
+        <i class="bi bi-info-circle me-1"></i>
+        El archivo JSON cumple con el formato del Ministerio de Salud de Colombia.
+        Sin factura asignada, no se genera RIPS.
+      </div>
+      <div class="mt-3">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-download me-1"></i>Generar y Descargar JSON</button>
+      </div>
+    </form>
+  </div></div>
+</div></div>
+{% endblock %}
+{% block scripts %}
+<script>
+function verificarParticular() {
+  var sel = document.getElementById('clienteRips');
+  var option = sel.options[sel.selectedIndex];
+  var codigo = option ? (option.dataset.codigo || '') : '';
+  var tipoUsuario = option ? (option.dataset.tipoUsuario || '12') : '12';
+  var seccion = document.getElementById('seccionParticular');
+
+  // Actualizar tipo de usuario según el cliente
+  document.getElementById('tipoUsuarioRips').value = tipoUsuario;
+
+  if (codigo === 'PARTIC') {
+    seccion.style.display = 'block';
+  } else {
+    seccion.style.display = 'none';
+  }
+}
+
+function buscarPacientesRips() {
+  var clienteId = document.getElementById('clienteRips').value;
+  var fechaDesde = document.getElementById('fechaDesde').value;
+  var fechaHasta = document.getElementById('fechaHasta').value;
+  if (!clienteId || !fechaDesde || !fechaHasta) {
+    alert('Seleccione empresa y rango de fechas primero.');
+    return;
+  }
+  fetch('/rips/api/atenciones-periodo?cliente_id=' + clienteId +
+        '&fecha_desde=' + fechaDesde + '&fecha_hasta=' + fechaHasta)
+    .then(r => r.json())
+    .then(function(data) {
+      var tbody = document.getElementById('bodyPacientesRips');
+      if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">No hay atenciones en ese rango.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = '';
+      data.forEach(function(a) {
+        var tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td><input type="checkbox" name="atenciones_rips" value="' + a.consecutivo + '"></td>' +
+          '<td><strong>' + a.consecutivo + '</strong></td>' +
+          '<td>' + a.paciente + '</td>' +
+          '<td>' + a.fecha + '</td>' +
+          '<td class="text-end">$ ' + Number(a.valor).toLocaleString('es-CO') + '</td>';
+        tbody.appendChild(tr);
+      });
+    });
+}
+
+function toggleAllRips(cb) {
+  document.querySelectorAll('input[name="atenciones_rips"]').forEach(function(c) {
+    c.checked = cb.checked;
+  });
+}
+</script>
+{% endblock %}

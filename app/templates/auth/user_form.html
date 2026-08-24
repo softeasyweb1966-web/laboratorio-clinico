@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Editar' if user else 'Nuevo' }} Usuario{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <h4><i class="bi bi-person-gear me-2"></i>{{ 'Editar' if user else 'Nuevo' }} Usuario</h4>
+    <hr>
+    <form method="post" class="card p-4 shadow-sm">
+      <div class="mb-3">
+        <label class="form-label">Nombre completo *</label>
+        <input type="text" name="name" class="form-control" value="{{ user.name if user else '' }}" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Correo electrÃ³nico *</label>
+        <input type="email" name="email" class="form-control" value="{{ user.email if user else '' }}" required>
+      </div>
+      {% if not user %}
+      <div class="mb-3">
+        <label class="form-label">Nombre de usuario *</label>
+        <input type="text" name="username" class="form-control" required>
+      </div>
+      {% else %}
+      <div class="mb-3">
+        <label class="form-label">Nombre de usuario</label>
+        <input type="text" class="form-control" value="{{ user.username }}" disabled>
+      </div>
+      {% endif %}
+      <div class="mb-3">
+        <label class="form-label">Contraseña {{ '' if user else '*' }}</label>
+        <input type="password" name="password" class="form-control" {{ 'required' if not user }}>
+        {% if user %}<small class="text-muted">Dejar en blanco para no cambiar.</small>{% endif %}
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Rol</label>
+        <select name="role" class="form-select">
+          <option value="bacteriologist" {{ 'selected' if user and user.role=='bacteriologist' }}>Bacteriólogo</option>
+          <option value="reviewer" {{ 'selected' if user and user.role=='reviewer' }}>Revisor</option>
+          <option value="admin" {{ 'selected' if user and user.role=='admin' }}>Administrador</option>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Registro profesional</label>
+        <input type="text" name="professional_id" class="form-control" value="{{ user.professional_id if user else '' }}">
+      </div>
+      {% if user %}
+      <div class="mb-3 form-check">
+        <input type="checkbox" class="form-check-input" name="active" id="active" {{ 'checked' if user.active }}>
+        <label class="form-check-label" for="active">Activo</label>
+      </div>
+      {% endif %}
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i>Guardar</button>
+        <a href="{{ url_for('auth.users_list') }}" class="btn btn-secondary">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

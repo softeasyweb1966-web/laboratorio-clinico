@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block title %}Departamentos{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+  <h4><i class="bi bi-map me-2 text-primary"></i>Departamentos</h4>
+  <button class="btn btn-primary btn-sm" onclick="nuevoDepto()">
+    <i class="bi bi-plus-lg me-1"></i>Nuevo Departamento
+  </button>
+</div>
+<div class="card">
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+      <thead><tr><th>Código</th><th>Nombre</th><th>País</th><th>Estado</th><th></th></tr></thead>
+      <tbody>
+        {% for d in departamentos %}
+        <tr>
+          <td><strong>{{ d.codigo }}</strong></td>
+          <td>{{ d.nombre }}</td>
+          <td>{{ d.pais.nombre }}</td>
+          <td><span class="badge {{ 'badge-activo' if d.estado else 'badge-inactivo' }}">{{ 'Activo' if d.estado else 'Inactivo' }}</span></td>
+          <td>
+            <button class="btn btn-sm btn-outline-primary"
+              onclick='editarDepto({{ d.id }}, {{ d.pais_id }}, "{{ d.codigo }}", "{{ d.nombre }}", {{ 'true' if d.estado else 'false' }})'>
+              <i class="bi bi-pencil"></i>
+            </button>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="text-center text-muted py-4">No hay departamentos.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal fade" id="modalDepto" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="{{ url_for('admin.departamento_guardar') }}" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="id" id="deptoId">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalTitle">Nuevo Departamento</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">País</label>
+            <select class="form-select" name="pais_id" id="deptoPais" required>
+              {% for p in paises %}
+              <option value="{{ p.id }}">{{ p.nombre }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Código</label>
+            <input type="text" class="form-control" name="codigo" id="deptoCodigo" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Nombre</label>
+            <input type="text" class="form-control" name="nombre" id="deptoNombre" required>
+          </div>
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" name="estado" id="deptoEstado" checked>
+            <label class="form-check-label" for="deptoEstado">Activo</label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<script>
+function nuevoDepto() {
+  document.getElementById('modalTitle').textContent = 'Nuevo Departamento';
+  document.getElementById('deptoId').value = '';
+  document.getElementById('deptoCodigo').value = '';
+  document.getElementById('deptoNombre').value = '';
+  document.getElementById('deptoEstado').checked = true;
+  new bootstrap.Modal(document.getElementById('modalDepto')).show();
+}
+function editarDepto(id, paisId, codigo, nombre, estado) {
+  document.getElementById('modalTitle').textContent = 'Editar Departamento';
+  document.getElementById('deptoId').value = id;
+  document.getElementById('deptoPais').value = paisId;
+  document.getElementById('deptoCodigo').value = codigo;
+  document.getElementById('deptoNombre').value = nombre;
+  document.getElementById('deptoEstado').checked = estado;
+  new bootstrap.Modal(document.getElementById('modalDepto')).show();
+}
+</script>
+{% endblock %}

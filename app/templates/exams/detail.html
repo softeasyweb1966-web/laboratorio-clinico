@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}{{ exam.name }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-3">
+  <div>
+    <h4><i class="bi bi-journal-medical me-2"></i>{{ exam.name }}
+      <code class="text-primary ms-2">{{ exam.code }}</code>
+    </h4>
+    <small class="text-muted">
+      {% if exam.technique %}Técnica: {{ exam.technique }} · {% endif %}
+      {% if exam.equipment %}Equipo: {{ exam.equipment }} · {% endif %}
+      {% if exam.method %}Método: {{ exam.method }}{% endif %}
+    </small>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('exams.exam_edit', exam_id=exam.id) }}" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-pencil me-1"></i>Editar
+    </a>
+    <a href="{{ url_for('designer.design', exam_id=exam.id) }}" class="btn btn-sm btn-info text-white">
+      <i class="bi bi-grid-3x3 me-1"></i>Diseñar plantilla
+    </a>
+    <a href="{{ url_for('exams.parameter_new', exam_id=exam.id) }}" class="btn btn-sm btn-primary">
+      <i class="bi bi-plus me-1"></i>Agregar parámetro
+    </a>
+  </div>
+</div>
+<hr>
+
+{% if exam.description %}
+<p>{{ exam.description }}</p>
+{% endif %}
+
+<h6 class="mt-4 mb-3">Parámetros</h6>
+<div class="table-responsive">
+  <table class="table table-bordered table-sm align-middle">
+    <thead class="table-secondary">
+      <tr>
+        <th>#</th><th>Nombre</th><th>Tipo</th><th>Unidades</th><th>Fijo</th><th>Valor fijo</th><th>Valores de referencia</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in params %}
+      <tr {% if not p.active %}class="text-muted"{% endif %}>
+        <td>{{ p.order_index }}</td>
+        <td>{{ p.name }}</td>
+        <td>
+          {% if p.result_type == 'decimal' %}<span class="badge bg-primary">Decimal</span>
+          {% elif p.result_type == 'integer' %}<span class="badge bg-info text-dark">Entero</span>
+          {% else %}<span class="badge bg-secondary">Texto</span>{% endif %}
+        </td>
+        <td>{{ p.default_units or '–' }}</td>
+        <td>{% if p.is_fixed %}<i class="bi bi-lock-fill text-warning"></i>{% else %}–{% endif %}</td>
+        <td>{{ p.fixed_value or '–' }}</td>
+        <td>
+          {% for rv in p.reference_values %}
+            <div class="small">
+              {% if rv.gender %}{{ rv.gender }} · {% endif %}
+              {% if rv.min_age is not none %}{{ rv.min_age }}{% endif %}–{% if rv.max_age is not none %}{{ rv.max_age }} años · {% endif %}
+              {% if rv.ref_type == 'range' %}{{ rv.min_value }} – {{ rv.max_value }}
+              {% elif rv.ref_type == 'exact' %}= {{ rv.exact_value }}
+              {% else %}{{ rv.text_value }}{% endif %}
+              {{ rv.units or '' }}
+            </div>
+          {% else %}–
+          {% endfor %}
+        </td>
+        <td>
+          <a href="{{ url_for('exams.parameter_edit', exam_id=exam.id, param_id=p.id) }}" class="btn btn-xs btn-outline-secondary btn-sm">
+            <i class="bi bi-pencil"></i>
+          </a>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="8" class="text-center text-muted">Sin parámetros. <a href="{{ url_for('exams.parameter_new', exam_id=exam.id) }}">Agregar parámetro</a>.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

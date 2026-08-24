@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Editar' if lista else 'Nueva' }} Lista de Precios{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h4>
+    <i class="bi bi-tags me-2 text-primary"></i>
+    {{ 'Editar Lista de Precios' if lista else 'Nueva Lista de Precios' }}
+  </h4>
+</div>
+
+<div class="row">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-body">
+        <form method="POST" novalidate>
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label">Código <span class="text-danger">*</span></label>
+              <input type="text" class="form-control text-uppercase" name="codigo"
+                     id="codigoLista"
+                     value="{{ lista.codigo if lista else '' }}"
+                     {{ 'readonly' if lista }} required maxlength="20"
+                     placeholder="Ej: COLSAN">
+              {% if not lista %}
+              <div class="form-text">Se genera desde el nombre. Puede editarlo.</div>
+              {% endif %}
+            </div>
+            <div class="col-md-8">
+              <label class="form-label">Nombre <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" name="nombre" id="nombreLista"
+                     value="{{ lista.nombre if lista else '' }}" required
+                     placeholder="Ej: COLSANITAS">
+            </div>
+            <div class="col-12">
+              <label class="form-label">Descripción</label>
+              <input type="text" class="form-control" name="descripcion"
+                     value="{{ lista.descripcion if lista else '' }}"
+                     placeholder="Descripción opcional de la lista">
+            </div>
+            {% if lista %}
+            <div class="col-12">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" name="estado" id="estado"
+                       {{ 'checked' if lista.estado }}>
+                <label class="form-check-label" for="estado">Lista activa</label>
+              </div>
+            </div>
+            {% endif %}
+          </div>
+
+          <!-- Clientes vinculados (solo en edición) -->
+          {% if lista and lista.clientes.count() > 0 %}
+          <div class="mt-3 p-3 bg-light rounded">
+            <small class="text-muted fw-semibold text-uppercase">
+              <i class="bi bi-building me-1"></i>Clientes con esta lista
+            </small>
+            <div class="mt-1">
+              {% for c in lista.clientes %}
+              <span class="badge bg-white border text-dark me-1 mb-1">
+                {{ c.codigo }} — {{ c.nombre }}
+              </span>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+
+          <div class="d-flex gap-2 mt-4">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-check-lg me-1"></i>Guardar
+            </button>
+            {% if lista %}
+            <a href="{{ url_for('listas.editar_items', id=lista.id) }}"
+               class="btn btn-outline-info">
+              <i class="bi bi-list-ul me-1"></i>Ver Servicios
+            </a>
+            {% endif %}
+            <a href="{{ url_for('listas.lista') }}" class="btn btn-outline-secondary">
+              Cancelar
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+{% if not lista %}
+<script>
+function generarCodigo(nombre) {
+  var sinTildes = nombre.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  return sinTildes.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 6);
+}
+document.getElementById('nombreLista').addEventListener('input', function() {
+  var cod = document.getElementById('codigoLista');
+  if (!cod.dataset.editado) cod.value = generarCodigo(this.value);
+});
+document.getElementById('codigoLista').addEventListener('input', function() {
+  this.dataset.editado = 'true';
+  this.value = this.value.toUpperCase();
+});
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,418 @@
+{% extends 'base.html' %}
+{% block title %}Nueva Atención{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h4><i class="bi bi-clipboard-plus me-2 text-primary"></i>Nueva Atención</h4>
+</div>
+<div class="card"><div class="card-body">
+  <form method="POST" id="formAtencion" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="row g-3">
+
+      <!-- PASO 1: PACIENTE -->
+      <div class="col-12"><h6 class="text-muted text-uppercase fw-semibold" style="font-size:.78rem; letter-spacing:.5px;"><i class="bi bi-1-circle me-1"></i>Paciente</h6></div>
+      <div class="col-md-5" style="position:relative;">
+        <label class="form-label">Buscar Paciente <span class="text-danger">*</span></label>
+        <input type="hidden" name="paciente_id" id="pacienteIdHidden" required>
+        <input type="text" class="form-control" id="pacienteBusqueda"
+               placeholder="Cédula, nombre o apellido..." autocomplete="off">
+        <div id="pacienteSugerencias" class="list-group position-absolute w-100" style="z-index:1050; max-height:220px; overflow-y:auto;"></div>
+        <div class="form-text">
+          <a href="{{ url_for('pacientes.nuevo') }}" target="_blank" class="text-decoration-none">
+            <i class="bi bi-plus me-1"></i>Crear nuevo paciente
+          </a>
+        </div>
+      </div>
+      <div class="col-md-7">
+        <label class="form-label">Datos del Paciente</label>
+        <div id="infoPaciente" class="form-control bg-light" style="min-height:38px;">
+          <span class="text-muted small">Escriba la cédula, nombre o apellido para buscar</span>
+        </div>
+      </div>
+
+      <!-- PASO 2: EMPRESA -->
+      <div class="col-12 mt-2"><h6 class="text-muted text-uppercase fw-semibold" style="font-size:.78rem; letter-spacing:.5px;"><i class="bi bi-2-circle me-1"></i>Empresa / Cliente</h6></div>
+      <div class="col-md-5" style="position:relative;">
+        <label class="form-label">Empresa <span class="text-danger">*</span></label>
+        <input type="hidden" name="cliente_id" id="clienteIdHidden">
+        <input type="text" class="form-control" id="clienteBusqueda"
+               placeholder="Buscar empresa por código o nombre..." autocomplete="off">
+        <div id="clienteSugerencias" class="list-group position-absolute w-100" style="z-index:1050; max-height:200px; overflow-y:auto;"></div>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Empresa seleccionada</label>
+        <div id="infoCliente" class="form-control bg-light" style="min-height:38px;">
+          <span class="text-muted small">—</span>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Fecha Atención</label>
+        <input type="date" class="form-control" name="fecha_atencion"
+               value="{{ now.strftime('%Y-%m-%d') }}">
+      </div>
+
+      <!-- PASO 3: EXÁMENES -->
+      <div class="col-12 mt-2"><h6 class="text-muted text-uppercase fw-semibold" style="font-size:.78rem; letter-spacing:.5px;"><i class="bi bi-3-circle me-1"></i>Exámenes / Procedimientos</h6></div>
+      <div class="col-md-4 mb-2">
+        <label class="form-label">Persona que Atiende</label>
+        <select class="form-select" name="persona_atiende_id" id="personaAtiende">
+          <option value="">— Seleccione —</option>
+          {% for p in personas %}
+          <option value="{{ p.id }}">{{ p.nombre_completo }} ({{ p.cargo or p.identificacion }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-12">
+        <div class="mb-2" style="position:relative;">
+          <input type="text" class="form-control form-control-sm w-50" id="cupsBusqueda"
+                 placeholder="Buscar CUPS por código o descripción..." autocomplete="off">
+          <div id="cupsSugerencias" class="list-group position-absolute" style="z-index:1050; min-width:400px; max-height:220px; overflow-y:auto;"></div>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm table-bordered" id="tablaExamenes">
+            <thead class="table-light">
+              <tr><th>Código</th><th>Descripción</th><th class="text-end">Valor</th><th></th></tr>
+            </thead>
+            <tbody id="cuerpoExamenes">
+              <tr id="filaVacia"><td colspan="4" class="text-center text-muted py-3">No hay exámenes agregados</td></tr>
+            </tbody>
+            <tfoot>
+              <tr><td colspan="2" class="fw-bold text-end">TOTAL:</td>
+                <td class="fw-bold text-end" id="totalExamenes">$ 0</td><td></td></tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- AUTORIZACIÓN -->
+      <div class="col-md-4">
+        <label class="form-label">Autorización</label>
+        <input type="text" class="form-control" name="autorizacion" id="campoAutorizacion">
+      </div>
+      <div class="col-md-4" id="grupoAutTransporte" style="display:none">
+        <label class="form-label text-warning"><i class="bi bi-bus-front me-1"></i>Autorización Transporte</label>
+        <input type="text" class="form-control border-warning" name="autorizacion_transporte">
+      </div>
+
+      <!-- PASO 4: PAGO -->
+      <div class="col-12 mt-2"><h6 class="text-muted text-uppercase fw-semibold" style="font-size:.78rem; letter-spacing:.5px;"><i class="bi bi-4-circle me-1"></i>Pago</h6></div>
+      <div class="col-md-3">
+        <label class="form-label">Forma de Pago</label>
+        <select class="form-select" name="forma_pago_id" id="formaPago">
+          <option value="">— Sin pago —</option>
+          {% for f in formas_pago %}
+          <option value="{{ f.id }}">{{ f.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Abono del Paciente</label>
+        <div class="input-group">
+          <span class="input-group-text">$</span>
+          <input type="number" class="form-control" name="abono_cliente" id="abono" min="0" step="1" value="0"
+                 onchange="calcularSaldo()">
+        </div>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Forma Abono</label>
+        <select class="form-select" name="forma_abono_id">
+          <option value="">—</option>
+          {% for f in formas_pago %}
+          <option value="{{ f.id }}">{{ f.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Saldo a Empresa</label>
+        <div class="input-group">
+          <span class="input-group-text text-danger">$</span>
+          <input type="text" class="form-control fw-bold text-danger bg-light" id="saldoEmpresa" readonly value="0">
+        </div>
+      </div>
+    </div>
+
+    <div class="d-flex gap-2 mt-4">
+      <button type="submit" class="btn btn-success btn-lg"><i class="bi bi-check-circle me-2"></i>Registrar Atención</button>
+      <a href="{{ url_for('atenciones.lista') }}" class="btn btn-outline-secondary">Cancelar</a>
+    </div>
+  </form>
+</div></div>
+{% endblock %}
+{% block scripts %}
+<script>
+var examenes = [];
+var clienteIdActual = null;
+var hayTransporte = false;
+
+// ── BÚSQUEDA DINÁMICA DE PACIENTES ────────────────────────────────────────
+var timePaciente = null;
+
+document.getElementById('pacienteBusqueda').addEventListener('input', function() {
+  var q = this.value.trim();
+  var cont = document.getElementById('pacienteSugerencias');
+
+  // Limpiar selección previa si el usuario borra el campo
+  if (q.length === 0) {
+    document.getElementById('pacienteIdHidden').value = '';
+    document.getElementById('infoPaciente').innerHTML =
+      '<span class="text-muted small">Escriba la cédula, nombre o apellido para buscar</span>';
+    cont.innerHTML = '';
+    return;
+  }
+
+  // Con menos de 2 caracteres no buscamos
+  if (q.length < 2) { cont.innerHTML = ''; return; }
+
+  clearTimeout(timePaciente);
+  timePaciente = setTimeout(function() {
+    fetch('/pacientes/buscar?q=' + encodeURIComponent(q))
+      .then(r => r.json())
+      .then(function(data) {
+        cont.innerHTML = '';
+
+        if (data.length === 0) {
+          // Sin resultados: mostrar opción de crear
+          var div = document.createElement('div');
+          div.className = 'list-group-item list-group-item-action py-2 text-muted small';
+          div.innerHTML = '<i class="bi bi-person-x me-1"></i>No se encontró "' + q + '". ' +
+            '<a href="/pacientes/nuevo" target="_blank" class="text-primary fw-semibold ms-1">' +
+            '<i class="bi bi-plus me-1"></i>Crear paciente</a>';
+          cont.appendChild(div);
+          return;
+        }
+
+        data.forEach(function(p) {
+          var a = document.createElement('a');
+          a.className = 'list-group-item list-group-item-action py-2';
+          a.href = '#';
+          a.innerHTML =
+            '<div class="d-flex justify-content-between align-items-center">' +
+              '<div>' +
+                '<strong class="text-primary">' + p.identificacion + '</strong>' +
+                ' <span class="ms-2">' + p.nombre_completo + '</span>' +
+              '</div>' +
+              '<small class="text-muted">' + (p.tipo_id || '') + '</small>' +
+            '</div>';
+          a.onclick = function(e) {
+            e.preventDefault();
+            seleccionarPaciente(p);
+          };
+          cont.appendChild(a);
+        });
+      });
+  }, 300);
+});
+
+function seleccionarPaciente(p) {
+  document.getElementById('pacienteIdHidden').value = p.identificacion;
+  document.getElementById('pacienteBusqueda').value = p.identificacion + ' — ' + p.nombre_completo;
+  document.getElementById('infoPaciente').innerHTML =
+    '<strong>' + p.nombre_completo + '</strong>' +
+    ' <span class="text-muted ms-2">' + (p.tipo_id || '') + ' ' + p.identificacion + '</span>';
+  document.getElementById('pacienteSugerencias').innerHTML = '';
+
+  // Consultar datos completos + última empresa
+  fetch('/atenciones/api/info-paciente/' + encodeURIComponent(p.identificacion))
+    .then(r => r.json())
+    .then(function(data) {
+      if (!data.existe) return;
+
+      // Enriquecer panel del paciente
+      document.getElementById('infoPaciente').innerHTML =
+        '<div class="d-flex align-items-center gap-3">' +
+          '<div>' +
+            '<strong>' + data.nombre_completo + '</strong>' +
+            ' <span class="text-muted ms-1">' + (data.tipo_id || '') + ' ' + data.identificacion + '</span>' +
+          '</div>' +
+          '<div class="text-muted small">' +
+            '<i class="bi bi-cake me-1"></i>' + data.fecha_nacimiento +
+            ' &nbsp;·&nbsp; ' + (data.sexo || '') +
+          '</div>' +
+        '</div>';
+
+      // Si tiene última empresa, auto-llenar y mostrar aviso
+      if (data.ultima_empresa) {
+        var emp = data.ultima_empresa;
+        autoLlenarEmpresa(emp);
+      }
+    });
+}
+
+function autoLlenarEmpresa(emp) {
+  // Llenar campos de empresa
+  document.getElementById('clienteIdHidden').value = emp.id;
+  document.getElementById('clienteBusqueda').value = emp.codigo + ' — ' + emp.nombre;
+  clienteIdActual = emp.id;
+
+  // Mostrar aviso con opción de cambiar
+  document.getElementById('infoCliente').innerHTML =
+    '<div class="d-flex align-items-center justify-content-between gap-2">' +
+      '<div>' +
+        '<strong>' + emp.nombre + '</strong>' +
+        '<span class="badge bg-secondary ms-2 small">Última visita ' + emp.fecha + '</span>' +
+      '</div>' +
+      '<button type="button" class="btn btn-outline-warning btn-sm py-0" onclick="limpiarEmpresa()" title="Cambiar empresa">' +
+        '<i class="bi bi-pencil me-1"></i>Cambiar' +
+      '</button>' +
+    '</div>';
+}
+
+function limpiarEmpresa() {
+  document.getElementById('clienteIdHidden').value = '';
+  document.getElementById('clienteBusqueda').value = '';
+  document.getElementById('infoCliente').innerHTML = '<span class="text-muted small">—</span>';
+  clienteIdActual = null;
+  document.getElementById('clienteBusqueda').focus();
+}
+
+// Cerrar sugerencias paciente al click fuera
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('#pacienteBusqueda') && !e.target.closest('#pacienteSugerencias'))
+    document.getElementById('pacienteSugerencias').innerHTML = '';
+});
+
+// ── BÚSQUEDA DE CLIENTES ──────────────────────────────────────────────────
+document.getElementById('clienteBusqueda').addEventListener('input', function() {
+  var q = this.value.trim();
+  var cont = document.getElementById('clienteSugerencias');
+  if (q.length < 2) { cont.innerHTML = ''; return; }
+  fetch('/clientes/buscar?q=' + encodeURIComponent(q))
+    .then(r => r.json())
+    .then(data => {
+      cont.innerHTML = '';
+      data.forEach(c => {
+        var a = document.createElement('a');
+        a.className = 'list-group-item list-group-item-action py-1';
+        a.innerHTML = '<strong>' + c.codigo + '</strong> — ' + c.nombre +
+          (c.tiene_tarifa ? ' <span class="badge bg-success ms-1 small">Tarifa</span>' : '');
+        a.href = '#';
+        a.onclick = function(e) {
+          e.preventDefault();
+          document.getElementById('clienteIdHidden').value = c.id;
+          document.getElementById('clienteBusqueda').value = c.codigo + ' — ' + c.nombre;
+          document.getElementById('infoCliente').innerHTML = '<strong>' + c.nombre + '</strong>';
+          cont.innerHTML = '';
+          clienteIdActual = c.id;
+        };
+        cont.appendChild(a);
+      });
+    });
+});
+
+// ── BÚSQUEDA DE CUPS ──────────────────────────────────────────────────────
+document.getElementById('cupsBusqueda').addEventListener('input', function() {
+  var q = this.value.trim();
+  var cont = document.getElementById('cupsSugerencias');
+  if (q.length < 2) { cont.innerHTML = ''; return; }
+  var url = '/cups/buscar?q=' + encodeURIComponent(q) + (clienteIdActual ? '&cliente_id=' + clienteIdActual : '');
+  fetch(url)
+    .then(r => r.json())
+    .then(data => {
+      cont.innerHTML = '';
+      data.forEach(c => {
+        var a = document.createElement('a');
+        a.className = 'list-group-item list-group-item-action py-1';
+        a.innerHTML = '<strong>' + c.codigo + '</strong> — ' + c.descripcion +
+          ' <span class="text-end float-end text-primary">$ ' +
+          Number(c.valor).toLocaleString('es-CO') + '</span>';
+        a.href = '#';
+        a.onclick = function(e) {
+          e.preventDefault();
+          agregarExamen(c);
+          document.getElementById('cupsBusqueda').value = '';
+          cont.innerHTML = '';
+        };
+        cont.appendChild(a);
+      });
+    });
+});
+
+function agregarExamen(c) {
+  if (examenes.find(e => e.codigo === c.codigo)) {
+    alert('Este CUPS ya está agregado.');
+    return;
+  }
+  examenes.push(c);
+  if (c.es_transporte) {
+    hayTransporte = true;
+    document.getElementById('grupoAutTransporte').style.display = 'block';
+  }
+  renderizarExamenes();
+}
+
+function quitarExamen(idx) {
+  examenes.splice(idx, 1);
+  hayTransporte = examenes.some(e => e.es_transporte);
+  document.getElementById('grupoAutTransporte').style.display = hayTransporte ? 'block' : 'none';
+  renderizarExamenes();
+}
+
+function renderizarExamenes() {
+  var tbody = document.getElementById('cuerpoExamenes');
+  if (examenes.length === 0) {
+    tbody.innerHTML = '<tr id="filaVacia"><td colspan="4" class="text-center text-muted py-3">No hay exámenes agregados</td></tr>';
+    actualizarTotal();
+    return;
+  }
+  tbody.innerHTML = '';
+  examenes.forEach(function(e, i) {
+    var tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td><strong>' + e.codigo + '</strong>' +
+        '<input type="hidden" name="cups_codigo[]" value="' + e.codigo + '"></td>' +
+      '<td>' + e.descripcion +
+        (e.es_transporte ? ' <span class="badge bg-info text-dark ms-1">Transporte</span>' : '') +
+      '</td>' +
+      '<td class="text-end">' +
+        '<div class="input-group input-group-sm justify-content-end" style="max-width:140px;margin-left:auto">' +
+          '<span class="input-group-text">$</span>' +
+          '<input type="number" class="form-control text-end" name="cups_valor[]"' +
+          ' value="' + Math.round(e.valor) + '" min="0" step="1" onchange="actualizarTotal()">' +
+        '</div>' +
+      '</td>' +
+      '<td><button type="button" class="btn btn-sm btn-outline-danger" onclick="quitarExamen(' + i + ')">' +
+        '<i class="bi bi-x"></i></button></td>';
+    tbody.appendChild(tr);
+  });
+  actualizarTotal();
+}
+
+function actualizarTotal() {
+  var inputs = document.querySelectorAll('input[name="cups_valor[]"]');
+  var total = 0;
+  inputs.forEach(function(inp) { total += parseFloat(inp.value || 0); });
+  document.getElementById('totalExamenes').textContent = '$ ' + total.toLocaleString('es-CO');
+  calcularSaldo();
+}
+
+function calcularSaldo() {
+  var inputs = document.querySelectorAll('input[name="cups_valor[]"]');
+  var total = 0;
+  inputs.forEach(function(inp) { total += parseFloat(inp.value || 0); });
+  var abono = parseFloat(document.getElementById('abono').value || 0);
+  var saldo = Math.max(0, total - abono);
+  document.getElementById('saldoEmpresa').value = saldo.toLocaleString('es-CO');
+}
+
+// Cerrar todas las sugerencias al click fuera
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('#clienteBusqueda') && !e.target.closest('#clienteSugerencias'))
+    document.getElementById('clienteSugerencias').innerHTML = '';
+  if (!e.target.closest('#cupsBusqueda') && !e.target.closest('#cupsSugerencias'))
+    document.getElementById('cupsSugerencias').innerHTML = '';
+});
+
+// Validación antes de enviar
+document.getElementById('formAtencion').addEventListener('submit', function(e) {
+  if (!document.getElementById('pacienteIdHidden').value) {
+    e.preventDefault();
+    alert('Debe seleccionar un paciente de la lista.');
+    document.getElementById('pacienteBusqueda').focus();
+  }
+  if (examenes.length === 0) {
+    e.preventDefault();
+    alert('Debe agregar al menos un examen.');
+  }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,207 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Editar' if paciente else 'Nuevo' }} Paciente{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h4><i class="bi bi-person-heart me-2 text-primary"></i>{{ 'Editar Paciente' if paciente else 'Nuevo Paciente' }}</h4>
+</div>
+<div class="card"><div class="card-body">
+  <form method="POST" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="row g-3">
+      <div class="col-md-3">
+        <label class="form-label">Tipo ID <span class="text-danger">*</span></label>
+        <select class="form-select" name="tipo_id_id" id="tipoIdPaciente" required>
+          <option value="">— Seleccione —</option>
+          {% for t in tipos_id %}
+          <option value="{{ t.id }}" data-codigo="{{ t.codigo }}" {{ 'selected' if selected_tipo_id == (t.id|string) }}>{{ t.codigo }} - {{ t.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Identificación <span class="text-danger">*</span></label>
+        <input type="text" class="form-control" name="identificacion"
+               value="{{ request.form.get('identificacion', paciente.identificacion if paciente else '') }}"
+               {{ 'readonly' if paciente }} required>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Sexo <span class="text-danger">*</span></label>
+        <select class="form-select" name="sexo_id" required>
+          <option value="">— Seleccione —</option>
+          {% for s in sexos %}
+          <option value="{{ s.id }}" {{ 'selected' if selected_sexo == (s.id|string) }}>{{ s.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Fecha Nacimiento <span class="text-danger">*</span></label>
+        <input type="date" class="form-control" name="fecha_nacimiento"
+               value="{{ request.form.get('fecha_nacimiento', paciente.fecha_nacimiento.strftime('%Y-%m-%d') if paciente else '') }}" required>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Nombre(s) <span class="text-danger">*</span></label>
+        <input type="text" class="form-control" name="nombres" value="{{ request.form.get('nombres', paciente.nombres if paciente else '') }}" required>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Apellidos <span class="text-danger">*</span></label>
+        <input type="text" class="form-control" name="apellidos" value="{{ request.form.get('apellidos', paciente.apellidos if paciente else '') }}" required>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Tipo de Usuario</label>
+        <select class="form-select" name="tipo_usuario_id">
+          <option value="">— Seleccione —</option>
+          {% for t in tipos_usuario %}
+          <option value="{{ t.id }}" {{ 'selected' if selected_tipo_usuario == (t.id|string) }}>{{ t.codigo }} - {{ t.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">País de Nacimiento</label>
+        <select class="form-select" name="pais_nacimiento_id" id="paisNacimiento">
+          <option value="">— Seleccione —</option>
+          {% for p in paises %}
+          <option value="{{ p.id }}" {{ 'selected' if selected_pais_nacimiento == (p.id|string) }}>{{ p.codigo }} - {{ p.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">País de Residencia</label>
+        <select class="form-select" name="pais_residencia_id" id="paisResidencia"
+                onchange="cargarDepartamentos(this.value)">
+          <option value="">— Seleccione —</option>
+          {% for p in paises %}
+          <option value="{{ p.id }}" {{ 'selected' if selected_pais_residencia == (p.id|string) }}>{{ p.codigo }} - {{ p.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-12">
+        <div class="form-text" id="helpPaises">
+          Para documentos diferentes de CE o PA, se sugiere igualar país de nacimiento y residencia. En CE y PA deben ser diferentes.
+        </div>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Departamento</label>
+        <select class="form-select" name="departamento_id" id="departamento"
+                onchange="cargarMunicipios(this.value)">
+          <option value="">— Seleccione —</option>
+          {% for d in departamentos %}
+          <option value="{{ d.id }}" {{ 'selected' if selected_departamento == (d.id|string) }}>{{ d.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Municipio / Localidad</label>
+        <select class="form-select" name="municipio_id" id="municipio">
+          <option value="">— Seleccione —</option>
+          {% for m in municipios %}
+          <option value="{{ m.id }}" {{ 'selected' if selected_municipio == (m.id|string) }}>{{ m.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Dirección</label>
+        <input type="text" class="form-control" name="direccion" value="{{ request.form.get('direccion', paciente.direccion if paciente else '') }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Teléfono</label>
+        <input type="text" class="form-control" name="telefono" value="{{ request.form.get('telefono', paciente.telefono if paciente else '') }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Celular</label>
+        <input type="text" class="form-control" name="celular" value="{{ request.form.get('celular', paciente.celular if paciente else '') }}">
+      </div>
+      <div class="col-md-5">
+        <label class="form-label">Correo Electrónico</label>
+        <input type="email" class="form-control" name="email" value="{{ request.form.get('email', paciente.email if paciente else '') }}">
+      </div>
+      <div class="col-md-3 d-flex align-items-end">
+        <div class="form-check form-switch mb-2">
+          <input class="form-check-input" type="checkbox" name="estado" id="estado"
+                 {{ 'checked' if request.form.get('estado', 'on' if not paciente or paciente.estado else '') == 'on' }}>
+          <label class="form-check-label" for="estado">Activo</label>
+        </div>
+      </div>
+    </div>
+    <div class="d-flex gap-2 mt-4">
+      <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Guardar</button>
+      <a href="{{ url_for('pacientes.lista') }}" class="btn btn-outline-secondary">Cancelar</a>
+    </div>
+  </form>
+</div></div>
+{% endblock %}
+{% block scripts %}
+<script>
+function cargarDepartamentos(paisId) {
+  var sel = document.getElementById('departamento');
+  sel.innerHTML = '<option value="">— Cargando... —</option>';
+  document.getElementById('municipio').innerHTML = '<option value="">— Seleccione —</option>';
+  if (!paisId) { sel.innerHTML = '<option value="">— Seleccione —</option>'; return; }
+  fetch('/admin/api/departamentos-por-pais/' + paisId)
+    .then(r => r.json())
+    .then(data => {
+      sel.innerHTML = '<option value="">— Seleccione —</option>';
+      data.forEach(d => sel.innerHTML += `<option value="${d.id}">${d.nombre}</option>`);
+    });
+}
+function cargarMunicipios(deptoId) {
+  var sel = document.getElementById('municipio');
+  sel.innerHTML = '<option value="">— Cargando... —</option>';
+  if (!deptoId) { sel.innerHTML = '<option value="">— Seleccione —</option>'; return; }
+  fetch('/admin/api/municipios-por-depto/' + deptoId)
+    .then(r => r.json())
+    .then(data => {
+      sel.innerHTML = '<option value="">— Seleccione —</option>';
+      data.forEach(m => sel.innerHTML += `<option value="${m.id}">${m.nombre}${m.es_localidad ? ' (Loc.)' : ''}</option>`);
+    });
+}
+
+var paisNacimientoEditado = false;
+var tipoIdPaciente = document.getElementById('tipoIdPaciente');
+var paisNacimiento = document.getElementById('paisNacimiento');
+var paisResidencia = document.getElementById('paisResidencia');
+var helpPaises = document.getElementById('helpPaises');
+
+function codigoTipoDocumento() {
+  var option = tipoIdPaciente.options[tipoIdPaciente.selectedIndex];
+  return option ? (option.dataset.codigo || '') : '';
+}
+
+function sincronizarPaises(desdeReglaAutomatica) {
+  var codigo = codigoTipoDocumento();
+  var esExtranjero = codigo === 'CE' || codigo === 'PA';
+  paisNacimiento.setCustomValidity('');
+
+  if (esExtranjero) {
+    helpPaises.textContent = 'Para CE o PA, el país de nacimiento debe ser diferente al país de residencia. Puede modificar ambos campos manualmente.';
+    if (desdeReglaAutomatica && paisNacimiento.value && paisNacimiento.value === paisResidencia.value) {
+      paisNacimiento.value = '';
+    }
+    if (paisNacimiento.value && paisResidencia.value && paisNacimiento.value === paisResidencia.value) {
+      paisNacimiento.setCustomValidity('Para CE o PA, el país de nacimiento debe ser diferente al país de residencia.');
+    }
+    return;
+  }
+
+  helpPaises.textContent = 'Para documentos diferentes de CE o PA, se sugiere igualar país de nacimiento y residencia. Puede cambiarlo manualmente si lo necesita.';
+  if (desdeReglaAutomatica && paisResidencia.value && (!paisNacimientoEditado || !paisNacimiento.value)) {
+    paisNacimiento.value = paisResidencia.value;
+  }
+}
+
+tipoIdPaciente.addEventListener('change', function() {
+  sincronizarPaises(true);
+});
+
+paisResidencia.addEventListener('change', function() {
+  sincronizarPaises(true);
+});
+
+paisNacimiento.addEventListener('change', function() {
+  paisNacimientoEditado = true;
+  sincronizarPaises(false);
+});
+
+window.addEventListener('load', function() {
+  sincronizarPaises(false);
+});
+</script>
+{% endblock %}

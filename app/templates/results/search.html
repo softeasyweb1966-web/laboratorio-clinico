@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Buscar AtenciÃ³n{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <h4><i class="bi bi-search me-2"></i>Registrar Resultado</h4>
+    <hr>
+
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+        <form method="get" class="row g-3">
+          <div class="col-md-5">
+            <label class="form-label fw-semibold">Consecutivo / AtenciÃ³n</label>
+            <input type="text" name="consecutive" class="form-control" value="{{ consecutive }}"
+                   placeholder="Ej: 2026000001" autofocus>
+          </div>
+          <div class="col-md-5">
+            <label class="form-label fw-semibold">CÃ³digo del examen / CUPS</label>
+            <input type="text" name="exam_code" class="form-control" value="{{ exam_code }}"
+                   placeholder="Ej: 903841">
+          </div>
+          <div class="col-md-2 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary w-100">
+              <i class="bi bi-search me-1"></i>Buscar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    {% if order %}
+    <div class="alert alert-info">
+      <strong>AtenciÃ³n encontrada:</strong>
+      {{ order.consecutive }} Â· {{ order.patient.name }}
+      ({{ order.patient.document_type }}: {{ order.patient.document }})
+      Â· {{ order.date.strftime('%Y-%m-%d') }}
+    </div>
+    <h6 class="mt-3">ExÃ¡menes disponibles para resultado:</h6>
+    <div class="list-group">
+      {% for exam in exams %}
+      <a href="{{ url_for('results.register', order_id=order.id, exam_id=exam.id) }}"
+         class="list-group-item list-group-item-action">
+        <span class="badge bg-secondary me-2">{{ exam.code }}</span>{{ exam.name }}
+        {% if exam.integration_code and exam.integration_code != exam.code %}
+          <span class="text-muted small ms-2">CUPS: {{ exam.integration_code }}</span>
+        {% endif %}
+      </a>
+      {% else %}
+      <div class="list-group-item text-muted">Esta atenciÃ³n no tiene exÃ¡menes del catÃ¡logo vinculados.</div>
+      {% endfor %}
+    </div>
+    {% if missing_codes %}
+    <div class="alert alert-warning mt-3 mb-0">
+      CÃ³digos solicitados sin plantilla asociada: {{ missing_codes|join(', ') }}.
+    </div>
+    {% endif %}
+    {% endif %}
+
+    <div class="mt-4">
+      <h6>La apertura de atenciones se administra en el aplicativo principal de laboratorio.</h6>
+    </div>
+  </div>
+</div>
+{% endblock %}

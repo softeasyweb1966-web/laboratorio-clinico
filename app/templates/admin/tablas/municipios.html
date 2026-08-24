@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% block title %}Municipios / Localidades{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+  <h4><i class="bi bi-geo-alt me-2 text-primary"></i>Municipios / Localidades</h4>
+  <button class="btn btn-primary btn-sm" onclick="nuevoMunicipio()">
+    <i class="bi bi-plus-lg me-1"></i>Nuevo
+  </button>
+</div>
+<div class="card">
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+      <thead><tr><th>Código</th><th>Nombre</th><th>Departamento</th><th>Localidad</th><th>Estado</th><th></th></tr></thead>
+      <tbody>
+        {% for m in municipios %}
+        <tr>
+          <td><strong>{{ m.codigo }}</strong></td>
+          <td>{{ m.nombre }}</td>
+          <td>{{ m.departamento.nombre }}</td>
+          <td>{{ '✓' if m.es_localidad else '' }}</td>
+          <td><span class="badge {{ 'badge-activo' if m.estado else 'badge-inactivo' }}">{{ 'Activo' if m.estado else 'Inactivo' }}</span></td>
+          <td>
+            <button class="btn btn-sm btn-outline-primary"
+              onclick='editarMunicipio({{ m.id }}, {{ m.departamento_id }}, "{{ m.codigo }}", "{{ m.nombre }}", {{ 'true' if m.es_localidad else 'false' }}, {{ 'true' if m.estado else 'false' }})'>
+              <i class="bi bi-pencil"></i>
+            </button>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="text-center text-muted py-4">No hay municipios.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal fade" id="modalMunicipio" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="{{ url_for('admin.municipio_guardar') }}" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="id" id="muniId">
+        <div class="modal-header">
+          <h5 class="modal-title" id="muniTitle">Nuevo Municipio</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Departamento</label>
+            <select class="form-select" name="departamento_id" id="muniDepto" required>
+              {% for d in departamentos %}
+              <option value="{{ d.id }}">{{ d.nombre }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-5">
+              <label class="form-label">Código</label>
+              <input type="text" class="form-control" name="codigo" id="muniCodigo" required>
+            </div>
+            <div class="col-7">
+              <label class="form-label">Nombre</label>
+              <input type="text" class="form-control" name="nombre" id="muniNombre" required>
+            </div>
+          </div>
+          <div class="d-flex gap-4">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" name="es_localidad" id="muniLocalidad">
+              <label class="form-check-label" for="muniLocalidad">Es Localidad (Bogotá)</label>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" name="estado" id="muniEstado" checked>
+              <label class="form-check-label" for="muniEstado">Activo</label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<script>
+function nuevoMunicipio() {
+  document.getElementById('muniTitle').textContent = 'Nuevo Municipio / Localidad';
+  document.getElementById('muniId').value = '';
+  document.getElementById('muniCodigo').value = '';
+  document.getElementById('muniNombre').value = '';
+  document.getElementById('muniLocalidad').checked = false;
+  document.getElementById('muniEstado').checked = true;
+  new bootstrap.Modal(document.getElementById('modalMunicipio')).show();
+}
+function editarMunicipio(id, deptoId, codigo, nombre, esLocalidad, estado) {
+  document.getElementById('muniTitle').textContent = 'Editar Municipio / Localidad';
+  document.getElementById('muniId').value = id;
+  document.getElementById('muniDepto').value = deptoId;
+  document.getElementById('muniCodigo').value = codigo;
+  document.getElementById('muniNombre').value = nombre;
+  document.getElementById('muniLocalidad').checked = esLocalidad;
+  document.getElementById('muniEstado').checked = estado;
+  new bootstrap.Modal(document.getElementById('modalMunicipio')).show();
+}
+</script>
+{% endblock %}

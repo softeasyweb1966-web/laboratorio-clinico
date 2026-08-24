@@ -1,0 +1,399 @@
+{% extends "base.html" %}
+{% block title %}Registrar – {{ exam.name }}{% endblock %}
+{% block extra_head %}
+<style>
+.result-cell { background: #d4edda !important; }
+.fixed-cell { background: #fff3cd; }
+.alarm-cell { background: #f8d7da !important; border: 2px solid #dc3545 !important; }
+.grid-table { border-collapse: collapse; width: 100%; }
+.grid-table td { border: 1px solid #ccc; padding: 4px 8px; vertical-align: middle; font-size: 13px; }
+.header-cell { background: #d0e4ff; font-weight: bold; text-align: center; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-3">
+  <div>
+    <h4><i class="bi bi-pencil-square me-2"></i>{{ exam.name }}
+      <code class="text-primary ms-2">{{ exam.code }}</code>
+    </h4>
+    <small class="text-muted">
+      Orden: <strong>{{ order.consecutive }}</strong> ·
+      Paciente: <strong>{{ patient.name }}</strong>
+      ({{ patient.document_type }}: {{ patient.document }}) ·
+      {% if patient.age %}{{ patient.age }} años · {% endif %}
+      {% if patient.gender %}{{ 'Masculino' if patient.gender=='M' else 'Femenino' }} ·{% endif %}
+    </small>
+  </div>
+  <div class="d-flex gap-2">
+    {% if prev_results %}
+    <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#prevModal">
+      <i class="bi bi-clock-history me-1"></i>Ver resultado anterior
+    </button>
+    {% endif %}
+    <a href="{{ url_for('results.search') }}" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-arrow-left me-1"></i>Volver
+    </a>
+  </div>
+</div>
+<hr class="mt-1">
+
+<form method="post" id="resultForm">
+  <div class="row g-3">
+    <!-- Grid / result entry -->
+    <div class="col-lg-8">
+      <div class="card shadow-sm">
+        <div class="card-header fw-semibold">
+          <i class="bi bi-table me-1"></i>Plantilla del examen
+          {% if existing %}<span class="badge bg-warning text-dark ms-2">Borrador guardado</span>{% endif %}
+        </div>
+        <div class="card-body p-3">
+          {% if grid %}
+          <table class="grid-table">
+            <tbody>
+              {% for row in grid %}
+              <tr>
+                {% for cell in row %}
+                  {% if cell is none %}
+                    {# skipped merged cell #}
+                  {% elif cell is mapping and cell.get('empty') %}
+                    <td></td>
+                  {% else %}
+                    {% set prid = cell.parameter_id %}
+                    {% set is_result = cell.cell_type == 'result' %}
+                    {% set is_fixed = cell.cell_type == 'fixed' %}
+                    <td rowspan="{{ cell.rowspan }}" colspan="{{ cell.colspan }}"
+                        class="
+                          {% if cell.cell_type == 'header' %}header-cell
+                          {% elif is_result %}result-cell
+                          {% elif is_fixed %}fixed-cell{% endif %}
+                          {% if cell.style_dict.get('bold') %}fw-bold{% endif %}"
+                        style="text-align: {{ cell.style_dict.get('align', 'left') }}">
+                      {% if is_result and prid %}
+                        {% set param = cell.parameter %}
+                        {% set cur_val = existing_values.get(prid, '') %}
+                        <div class="d-flex align-items-center gap-1">
+                          {% if param.result_type == 'text' %}
+                            <input type="text" name="param_{{ prid }}" id="param_{{ prid }}"
+                                   class="form-control form-control-sm result-input"
+                                   value="{{ cur_val }}"
+                                   data-param-id="{{ prid }}"
+                                   data-param-type="{{ param.result_type }}">
+                          {% else %}
+                            <input type="number" step="{{ '1' if param.result_type == 'integer' else 'any' }}"
+                                   name="param_{{ prid }}" id="param_{{ prid }}"
+                                   class="form-control form-control-sm result-input"
+                                   value="{{ cur_val }}"
+                                   data-param-id="{{ prid }}"
+                                   data-param-type="{{ param.result_type }}">
+                          {% endif %}
+                          <input type="text" name="units_{{ prid }}" id="units_{{ prid }}"
+                                 class="form-control form-control-sm units-input"
+                                 style="max-width:80px"
+                                 value="{{ existing_units.get(prid, param.default_units or '') }}"
+                                 list="units_list_{{ prid }}"
+                                 placeholder="unid.">
+                          <datalist id="units_list_{{ prid }}">
+                            {% for rv in param.reference_values %}
+                              {% if rv.units %}<option value="{{ rv.units }}">{% endif %}
+                            {% endfor %}
+                            {% if param.default_units %}<option value="{{ param.default_units }}">{% endif %}
+                          </datalist>
+                          <span class="alarm-icon text-danger d-none" id="alarm_{{ prid }}" title="Fuera de rango">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                          </span>
+                          <input type="hidden" name="flag_{{ prid }}" id="flag_{{ prid }}" value="">
+                        </div>
+                        <small class="text-muted" id="ref_{{ prid }}">
+                          {% for rv in param.reference_values %}
+                            {% if loop.first %}
+                              Ref:
+                              {% if rv.ref_type == 'range' %}{{ rv.min_value }} – {{ rv.max_value }}
+                              {% elif rv.ref_type == 'exact' %}= {{ rv.exact_value }}
+                              {% else %}{{ rv.text_value }}{% endif %}
+                              {{ rv.units or '' }}
+                            {% endif %}
+                          {% endfor %}
+                        </small>
+                      {% elif is_fixed and prid %}
+                        {% set param = cell.parameter %}
+                        {% if param.is_fixed %}
+                          <span class="text-muted">{{ param.fixed_value or cell.content or param.name }}</span>
+                        {% else %}
+                          <span>{{ cell.content or '' }}</span>
+                        {% endif %}
+                      {% else %}
+                        {{ cell.content or '' }}
+                      {% endif %}
+                    </td>
+                  {% endif %}
+                {% endfor %}
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <!-- Fallback: simple list -->
+          <div class="table-responsive">
+            <table class="table table-bordered table-sm align-middle">
+              <thead class="table-light">
+                <tr><th>Parámetro</th><th>Resultado</th><th>Unidades</th><th>Referencia</th></tr>
+              </thead>
+              <tbody>
+                {% for param in params %}
+                {% if not param.is_fixed %}
+                <tr>
+                  <td>{{ param.name }}</td>
+                  <td>
+                    {% set cur_val = existing_values.get(param.id, '') %}
+                    {% if param.result_type == 'text' %}
+                      <input type="text" name="param_{{ param.id }}" class="form-control form-control-sm result-input"
+                             value="{{ cur_val }}" data-param-id="{{ param.id }}" data-param-type="text">
+                    {% else %}
+                      <input type="number" step="{{ '1' if param.result_type == 'integer' else 'any' }}"
+                             name="param_{{ param.id }}" class="form-control form-control-sm result-input"
+                             value="{{ cur_val }}" data-param-id="{{ param.id }}" data-param-type="{{ param.result_type }}">
+                    {% endif %}
+                    <span class="alarm-icon text-danger d-none" id="alarm_{{ param.id }}">
+                      <i class="bi bi-exclamation-triangle-fill"></i>
+                    </span>
+                    <input type="hidden" name="flag_{{ param.id }}" id="flag_{{ param.id }}" value="">
+                  </td>
+                  <td>
+                    <input type="text" name="units_{{ param.id }}"
+                           class="form-control form-control-sm"
+                           value="{{ existing_units.get(param.id, param.default_units or '') }}"
+                           style="max-width:90px"
+                           list="ul_{{ param.id }}">
+                    <datalist id="ul_{{ param.id }}">
+                      {% if param.default_units %}<option value="{{ param.default_units }}">{% endif %}
+                    </datalist>
+                  </td>
+                  <td class="small text-muted">
+                    {% for rv in param.reference_values %}{% if loop.first %}
+                      {% if rv.ref_type == 'range' %}{{ rv.min_value }} – {{ rv.max_value }}
+                      {% elif rv.ref_type == 'exact' %}= {{ rv.exact_value }}
+                      {% else %}{{ rv.text_value }}{% endif %}
+                      {{ rv.units or '' }}
+                    {% endif %}{% endfor %}
+                  </td>
+                </tr>
+                {% endif %}
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar: signatures and actions -->
+    <div class="col-lg-4">
+      <div class="card shadow-sm mb-3">
+        <div class="card-header fw-semibold"><i class="bi bi-pen me-1"></i>Firmas</div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label class="form-label">Bacteriólogo *</label>
+            <select name="bacteriologist_id" class="form-select" required>
+              {% for u in bacteriologists %}
+              <option value="{{ u.id }}" {{ 'selected' if u.id == current_user.id }}>
+                {{ u.name }}{% if u.professional_id %} ({{ u.professional_id }}){% endif %}
+              </option>
+              {% endfor %}
+            </select>
+            <div class="form-text">El profesional seleccionado debe tener una firma cargada en su perfil.</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Revisor / Aprobador <small class="text-muted">(opcional)</small></label>
+            <select name="reviewer_id" class="form-select">
+              <option value="">– Sin revisor –</option>
+              {% for u in reviewers %}
+              <option value="{{ u.id }}" {{ 'selected' if existing and existing.reviewer_id == u.id }}>
+                {{ u.name }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="card shadow-sm mb-3">
+        <div class="card-header fw-semibold"><i class="bi bi-chat-text me-1"></i>Observaciones</div>
+        <div class="card-body">
+          <textarea name="notes" class="form-control" rows="3" placeholder="Observaciones del resultado...">{{ existing.notes if existing else '' }}</textarea>
+        </div>
+      </div>
+
+      <!-- Alarm summary -->
+      <div id="alarmSummary" class="alert alert-warning d-none">
+        <strong><i class="bi bi-exclamation-triangle-fill me-1"></i>Alertas:</strong>
+        <ul id="alarmList" class="mb-0 mt-1 ps-3 small"></ul>
+      </div>
+
+      <!-- Actions -->
+      <div class="d-grid gap-2">
+        <button type="submit" name="action" value="save" class="btn btn-outline-primary">
+          <i class="bi bi-save me-1"></i>Guardar borrador
+        </button>
+        <button type="submit" name="action" value="finalize" class="btn btn-success" id="finalizeBtn">
+          <i class="bi bi-check-circle me-1"></i>Finalizar resultado
+        </button>
+        {% if current_user.role in ('reviewer', 'admin') %}
+        <button type="submit" name="action" value="approve" class="btn btn-primary">
+          <i class="bi bi-patch-check me-1"></i>Aprobar resultado
+        </button>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</form>
+
+<!-- Previous results modal -->
+{% if prev_results %}
+<div class="modal fade" id="prevModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-clock-history me-1"></i>Resultados anteriores</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="list-group">
+          {% for r in prev_results %}
+          <button type="button" class="list-group-item list-group-item-action load-prev-btn"
+                  data-result-id="{{ r.id }}">
+            {{ r.date.strftime('%Y-%m-%d %H:%M') }} –
+            <span class="badge bg-{{ 'success' if r.status=='final' else 'warning text-dark' }}">{{ r.status }}</span>
+            {% if r.has_alarms %}<i class="bi bi-exclamation-triangle-fill text-danger ms-1"></i>{% endif %}
+          </button>
+          {% endfor %}
+        </div>
+        <div id="prevResultDetails" class="mt-3"></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<script>
+// ========================================================================
+// Reference value data from server
+// ========================================================================
+const refData = {
+  {% for param in params %}
+  {% if not param.is_fixed %}
+  {{ param.id }}: {
+    type: "{{ param.result_type }}",
+    refs: [
+      {% for rv in param.reference_values %}
+      {
+        ref_type: "{{ rv.ref_type }}",
+        min_value: {{ rv.min_value if rv.min_value is not none else 'null' }},
+        max_value: {{ rv.max_value if rv.max_value is not none else 'null' }},
+        exact_value: {{ rv.exact_value if rv.exact_value is not none else 'null' }},
+        units: "{{ rv.units or '' }}"
+      },
+      {% endfor %}
+    ]
+  },
+  {% endif %}
+  {% endfor %}
+};
+
+function checkAlarms() {
+  const alarmList = document.getElementById('alarmList');
+  const alarmSummary = document.getElementById('alarmSummary');
+  alarmList.innerHTML = '';
+  let hasAlarm = false;
+
+  document.querySelectorAll('.result-input').forEach(input => {
+    const pid = parseInt(input.dataset.paramId);
+    const value = input.value.trim();
+    const alarmIcon = document.getElementById(`alarm_${pid}`);
+    const flagInput = document.getElementById(`flag_${pid}`);
+    const row = input.closest('tr, td');
+
+    if (!value || !refData[pid] || !refData[pid].refs.length) {
+      if (alarmIcon) alarmIcon.classList.add('d-none');
+      input.classList.remove('alarm-cell');
+      return;
+    }
+
+    const ref = refData[pid].refs[0];
+    let outOfRange = false;
+
+    if (ref.ref_type === 'range') {
+      const v = parseFloat(value);
+      if (!isNaN(v)) {
+        if (ref.min_value !== null && v < ref.min_value) outOfRange = true;
+        if (ref.max_value !== null && v > ref.max_value) outOfRange = true;
+      }
+    } else if (ref.ref_type === 'exact') {
+      const v = parseFloat(value);
+      if (!isNaN(v) && ref.exact_value !== null && v !== ref.exact_value) outOfRange = true;
+    }
+
+    if (outOfRange) {
+      hasAlarm = true;
+      if (alarmIcon) alarmIcon.classList.remove('d-none');
+      input.classList.add('border-danger');
+      if (flagInput) flagInput.value = '1';
+      const label = input.closest('td')?.previousElementSibling?.textContent?.trim() || `Parámetro ${pid}`;
+      const desc = ref.ref_type === 'range'
+        ? `${ref.min_value ?? ''} – ${ref.max_value ?? ''} ${ref.units}`
+        : `${ref.exact_value} ${ref.units}`;
+      const li = document.createElement('li');
+      li.textContent = `${label}: ${value} (ref: ${desc})`;
+      alarmList.appendChild(li);
+    } else {
+      if (alarmIcon) alarmIcon.classList.add('d-none');
+      input.classList.remove('border-danger');
+      if (flagInput) flagInput.value = '';
+    }
+  });
+
+  alarmSummary.classList.toggle('d-none', !hasAlarm);
+}
+
+document.querySelectorAll('.result-input').forEach(input => {
+  input.addEventListener('change', checkAlarms);
+  input.addEventListener('input', checkAlarms);
+});
+
+// Run on load for draft values
+checkAlarms();
+
+// ========================================================================
+// Previous results loader
+// ========================================================================
+document.querySelectorAll('.load-prev-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const rid = btn.dataset.resultId;
+    fetch(`/api/results/${rid}/parameter-values`)
+      .then(r => r.json())
+      .then(data => {
+        const div = document.getElementById('prevResultDetails');
+        let html = `<h6>Resultado del ${data.date}</h6><table class="table table-sm table-bordered">
+          <thead><tr><th>Parámetro</th><th>Valor</th><th>Unidades</th><th>Alarma</th></tr></thead><tbody>`;
+        data.values.forEach(v => {
+          const alarm = v.out_of_range ? '<i class="bi bi-exclamation-triangle-fill text-danger"></i>' : '';
+          html += `<tr><td>${v.parameter_name}</td><td>${v.value}</td><td>${v.units || ''}</td><td>${alarm}</td></tr>`;
+        });
+        html += '</tbody></table>';
+        div.innerHTML = html;
+      });
+  });
+});
+
+// Warn on finalize if alarms
+document.getElementById('finalizeBtn')?.addEventListener('click', function(e) {
+  const alarmSummary = document.getElementById('alarmSummary');
+  if (!alarmSummary.classList.contains('d-none')) {
+    if (!confirm('Hay valores fuera del rango de referencia. ¿Desea finalizar el resultado de todas formas?')) {
+      e.preventDefault();
+    }
+  }
+});
+</script>
+{% endblock %}

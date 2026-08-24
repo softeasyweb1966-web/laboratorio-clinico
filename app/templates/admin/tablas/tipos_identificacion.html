@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}Tipos de Identificación{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+  <h4><i class="bi bi-card-text me-2 text-primary"></i>Tipos de Identificación</h4>
+  <button class="btn btn-primary btn-sm" onclick="nuevo()"><i class="bi bi-plus-lg me-1"></i>Nuevo</button>
+</div>
+<div class="card">
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+      <thead><tr><th>Código</th><th>Nombre</th><th>Estado</th><th></th></tr></thead>
+      <tbody>
+        {% for t in tipos %}
+        <tr>
+          <td><strong>{{ t.codigo }}</strong></td><td>{{ t.nombre }}</td>
+          <td><span class="badge {{ 'badge-activo' if t.estado else 'badge-inactivo' }}">{{ 'Activo' if t.estado else 'Inactivo' }}</span></td>
+          <td><button class="btn btn-sm btn-outline-primary"
+            onclick='editar({{ t.id }}, "{{ t.codigo }}", "{{ t.nombre }}", {{ 'true' if t.estado else 'false' }})'><i class="bi bi-pencil"></i></button></td>
+        </tr>
+        {% else %}<tr><td colspan="4" class="text-center text-muted py-4">Sin datos.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+<div class="modal fade" id="modal" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <form method="POST" action="{{ url_for('admin.tipo_identificacion_guardar') }}" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="id" id="fId">
+      <div class="modal-header"><h5 class="modal-title" id="modalTitle">Tipo de Identificación</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="mb-3"><label class="form-label">Código</label>
+          <input type="text" class="form-control" name="codigo" id="fCodigo" maxlength="5" required></div>
+        <div class="mb-3"><label class="form-label">Nombre</label>
+          <input type="text" class="form-control" name="nombre" id="fNombre" required></div>
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" name="estado" id="fEstado" checked>
+          <label class="form-check-label" for="fEstado">Activo</label></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div></div>
+</div>
+<script>
+function nuevo(){document.getElementById('fId').value='';document.getElementById('fCodigo').value='';document.getElementById('fNombre').value='';document.getElementById('fEstado').checked=true;new bootstrap.Modal(document.getElementById('modal')).show();}
+function editar(id,codigo,nombre,estado){document.getElementById('fId').value=id;document.getElementById('fCodigo').value=codigo;document.getElementById('fNombre').value=nombre;document.getElementById('fEstado').checked=estado;new bootstrap.Modal(document.getElementById('modal')).show();}
+</script>
+{% endblock %}

@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% block title %}Resultado #{{ result.id }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-3">
+  <div>
+    <h4><i class="bi bi-file-earmark-text me-2"></i>Resultado #{{ result.id }}
+      <span class="badge ms-2 bg-{{ 'success' if result.status=='final' else ('primary' if result.status=='approved' else 'warning text-dark') }}">
+        {{ result.status.upper() }}
+      </span>
+      {% if result.has_alarms %}
+      <span class="badge bg-danger ms-1"><i class="bi bi-exclamation-triangle-fill me-1"></i>ALARMAS</span>
+      {% endif %}
+    </h4>
+    <small class="text-muted">
+      Orden: <strong>{{ order.consecutive }}</strong> ·
+      Paciente: <strong>{{ order.patient.name }}</strong> ·
+      Examen: <strong>{{ exam.name }}</strong> ·
+      {{ result.date.strftime('%Y-%m-%d %H:%M') }}
+    </small>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('results.result_pdf', result_id=result.id) }}" class="btn btn-sm btn-danger" target="_blank">
+      <i class="bi bi-file-pdf me-1"></i>PDF
+    </a>
+    <a href="{{ url_for('results.register', order_id=order.id, exam_id=exam.id) }}" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-pencil me-1"></i>Editar
+    </a>
+  </div>
+</div>
+<hr class="mt-1">
+
+<div class="row g-3">
+  <div class="col-md-4">
+    <div class="card shadow-sm">
+      <div class="card-header bg-light fw-semibold">Paciente</div>
+      <div class="card-body p-3 small">
+        <div><strong>{{ order.patient.name }}</strong></div>
+        <div>{{ order.patient.document_type }}: {{ order.patient.document }}</div>
+        {% if order.patient.birth_date %}<div>{{ order.patient.birth_date }} ({{ order.patient.age }} años)</div>{% endif %}
+        {% if order.patient.gender %}<div>{{ 'Masculino' if order.patient.gender=='M' else 'Femenino' }}</div>{% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card shadow-sm">
+      <div class="card-header bg-light fw-semibold">Examen</div>
+      <div class="card-body p-3 small">
+        <div><strong>{{ exam.name }}</strong> <code>{{ exam.code }}</code></div>
+        {% if exam.technique %}<div>Técnica: {{ exam.technique }}</div>{% endif %}
+        {% if exam.equipment %}<div>Equipo: {{ exam.equipment }}</div>{% endif %}
+        {% if exam.method %}<div>Método: {{ exam.method }}</div>{% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card shadow-sm">
+      <div class="card-header bg-light fw-semibold">Firmas</div>
+      <div class="card-body p-3 small">
+        <div><strong>Bacteriólogo:</strong> {{ result.bacteriologist.name }}</div>
+        {% if result.bacteriologist.professional_id %}
+        <div>Reg. Prof.: {{ result.bacteriologist.professional_id }}</div>
+        {% endif %}
+        {% if result.reviewer %}
+        <div class="mt-2"><strong>Revisor:</strong> {{ result.reviewer.name }}</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Results table -->
+  <div class="col-12">
+    <div class="card shadow-sm">
+      <div class="card-header fw-semibold">Resultados</div>
+      <div class="card-body p-3">
+        {% if grid %}
+        <table class="table table-bordered table-sm" style="width:auto">
+          <tbody>
+            {% for row in grid %}
+            <tr>
+              {% for cell in row %}
+                {% if cell is none %}
+                {# merged #}
+                {% elif cell is mapping and cell.get('empty') %}
+                <td></td>
+                {% else %}
+                {% set prid = cell.parameter_id %}
+                {% set pr = pr_map.get(prid) if prid else none %}
+                <td rowspan="{{ cell.rowspan }}" colspan="{{ cell.colspan }}"
+                    class="{{ 'fw-bold text-center bg-light' if cell.cell_type=='header' }}
+                           {{ 'bg-light-green' if cell.cell_type=='result' }}"
+                    style="{% if cell.style_dict.get('bold') %}font-weight:bold;{% endif %}
+                           {% if cell.style_dict.get('align') %}text-align:{{ cell.style_dict.align }};{% endif %}
+                           {% if cell.cell_type=='result' %}background:#d4edda;{% endif %}
+                           {% if cell.cell_type=='header' %}background:#d0e4ff;font-weight:bold;{% endif %}">
+                  {% if cell.cell_type == 'result' and pr %}
+                    {% if pr.out_of_range or pr.flagged %}
+                      <span class="text-danger fw-bold">{{ pr.value }} {{ pr.units or '' }}
+                        <i class="bi bi-exclamation-triangle-fill ms-1" title="Fuera de rango"></i>
+                      </span>
+                    {% else %}
+                      {{ pr.value }} {{ pr.units or '' }}
+                    {% endif %}
+                  {% elif cell.cell_type == 'fixed' and prid %}
+                    {% if pr %}{{ pr.value }}{% else %}{{ cell.content or '' }}{% endif %}
+                  {% else %}
+                    {{ cell.content or '' }}
+                  {% endif %}
+                </td>
+                {% endif %}
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <table class="table table-bordered table-sm">
+          <thead class="table-light">
+            <tr><th>Parámetro</th><th>Resultado</th><th>Unidades</th><th>Referencia</th></tr>
+          </thead>
+          <tbody>
+            {% for pr in result.parameter_results %}
+            <tr {% if pr.out_of_range or pr.flagged %}class="table-danger"{% endif %}>
+              <td>{{ pr.parameter.name }}</td>
+              <td>
+                {{ pr.value }}
+                {% if pr.out_of_range or pr.flagged %}
+                <i class="bi bi-exclamation-triangle-fill text-danger ms-1"></i>{% endif %}
+              </td>
+              <td>{{ pr.units or '' }}</td>
+              <td class="small text-muted">
+                {% for rv in pr.parameter.reference_values %}{% if loop.first %}
+                  {% if rv.ref_type == 'range' %}{{ rv.min_value }} – {{ rv.max_value }}
+                  {% elif rv.ref_type == 'exact' %}= {{ rv.exact_value }}
+                  {% else %}{{ rv.text_value }}{% endif %}
+                  {{ rv.units or '' }}
+                {% endif %}{% endfor %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% endif %}
+
+        {% if result.notes %}
+        <div class="mt-3">
+          <strong>Observaciones:</strong> {{ result.notes }}
+        </div>
+        {% endif %}
+
+        {% if result.qr_token %}
+        <div class="mt-3 small text-muted">
+          <i class="bi bi-qr-code me-1"></i>Token QR:
+          <a href="{{ url_for('results.verify', token=result.qr_token) }}" target="_blank">
+            {{ result.qr_token }}
+          </a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

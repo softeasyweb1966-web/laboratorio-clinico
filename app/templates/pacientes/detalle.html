@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}Paciente {{ paciente.nombre_completo }}{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+  <h4><i class="bi bi-person-heart me-2 text-primary"></i>{{ paciente.nombre_completo }}</h4>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('pacientes.editar', identificacion=paciente.identificacion) }}" class="btn btn-primary btn-sm"><i class="bi bi-pencil me-1"></i>Editar</a>
+    <a href="{{ url_for('pacientes.lista') }}" class="btn btn-outline-secondary btn-sm">Volver</a>
+  </div>
+</div>
+<div class="row g-3">
+  <div class="col-md-6">
+    <div class="card h-100"><div class="card-header">Datos Personales</div><div class="card-body">
+      <dl class="row mb-0">
+        <dt class="col-sm-5">Identificación</dt>
+        <dd class="col-sm-7">{{ paciente.tipo_id.codigo if paciente.tipo_id else '' }} {{ paciente.identificacion }}</dd>
+        <dt class="col-sm-5">Fecha Nacimiento</dt>
+        <dd class="col-sm-7">{{ paciente.fecha_nacimiento.strftime('%d/%m/%Y') }}</dd>
+        <dt class="col-sm-5">Sexo</dt>
+        <dd class="col-sm-7">{{ paciente.sexo.nombre if paciente.sexo else '—' }}</dd>
+        <dt class="col-sm-5">Tipo Usuario</dt>
+        <dd class="col-sm-7">{{ paciente.tipo_usuario.nombre if paciente.tipo_usuario else '—' }}</dd>
+        <dt class="col-sm-5">Estado</dt>
+        <dd class="col-sm-7"><span class="badge {{ 'badge-activo' if paciente.estado else 'badge-inactivo' }}">{{ 'Activo' if paciente.estado else 'Inactivo' }}</span></dd>
+      </dl>
+    </div></div>
+  </div>
+  <div class="col-md-6">
+    <div class="card h-100"><div class="card-header">Contacto y Ubicación</div><div class="card-body">
+      <dl class="row mb-0">
+        <dt class="col-sm-5">Dirección</dt><dd class="col-sm-7">{{ paciente.direccion or '—' }}</dd>
+        <dt class="col-sm-5">Teléfono</dt><dd class="col-sm-7">{{ paciente.telefono or '—' }}</dd>
+        <dt class="col-sm-5">Celular</dt><dd class="col-sm-7">{{ paciente.celular or '—' }}</dd>
+        <dt class="col-sm-5">Email</dt><dd class="col-sm-7">{{ paciente.email or '—' }}</dd>
+        <dt class="col-sm-5">País Residencia</dt><dd class="col-sm-7">{{ paciente.pais_residencia.nombre if paciente.pais_residencia else '—' }}</dd>
+        <dt class="col-sm-5">Departamento</dt><dd class="col-sm-7">{{ paciente.departamento.nombre if paciente.departamento else '—' }}</dd>
+        <dt class="col-sm-5">Municipio</dt><dd class="col-sm-7">{{ paciente.municipio.nombre if paciente.municipio else '—' }}</dd>
+      </dl>
+    </div></div>
+  </div>
+</div>
+{% endblock %}

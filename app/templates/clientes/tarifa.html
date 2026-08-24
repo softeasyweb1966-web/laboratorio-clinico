@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Tarifa — {{ cliente.nombre }}{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+  <h4><i class="bi bi-currency-dollar me-2 text-primary"></i>Tarifa: {{ cliente.nombre }}</h4>
+  <a href="{{ url_for('clientes.lista') }}" class="btn btn-outline-secondary btn-sm">Volver</a>
+</div>
+<div class="card"><div class="card-body">
+  <p class="text-muted small mb-3">Deja el valor en blanco o en 0 para excluir el servicio de la tarifa del cliente.</p>
+  <form method="POST" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="table-responsive">
+      <table class="table table-hover table-sm">
+        <thead><tr><th>Código</th><th>Descripción</th><th class="text-end">Valor Base</th><th class="text-end" style="width:160px">Valor Tarifa</th></tr></thead>
+        <tbody>
+          {% for c in cups_todos %}
+          <tr>
+            <td><strong>{{ c.codigo }}</strong></td>
+            <td>{{ c.descripcion }}</td>
+            <td class="text-end text-muted">$ {{ '{:,.0f}'.format(c.valor) }}</td>
+            <td class="text-end">
+              <div class="input-group input-group-sm">
+                <span class="input-group-text">$</span>
+                <input type="number" class="form-control form-control-sm text-end"
+                       name="valor_{{ c.codigo }}"
+                       value="{{ '{:.0f}'.format(tarifas_dict[c.codigo]) if c.codigo in tarifas_dict else '' }}"
+                       min="0" step="1" placeholder="0">
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="d-flex gap-2 mt-3">
+      <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Guardar Tarifa</button>
+      <a href="{{ url_for('clientes.lista') }}" class="btn btn-outline-secondary">Cancelar</a>
+    </div>
+  </form>
+</div></div>
+{% endblock %}

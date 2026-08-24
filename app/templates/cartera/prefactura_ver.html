@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% block title %}Prefactura {{ prefactura.nro_prefactura }}{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+  <h4><i class="bi bi-file-earmark-text me-2 text-primary"></i>Prefactura {{ prefactura.nro_prefactura }}</h4>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('cartera.prefactura_excel', id=prefactura.id) }}" class="btn btn-outline-success btn-sm">
+      <i class="bi bi-file-earmark-excel me-1"></i>Excel
+    </a>
+    {% if prefactura.estado != 'Pagada' %}
+    <a href="{{ url_for('cartera.recibo_nuevo', prefactura_id=prefactura.id) }}" class="btn btn-success btn-sm">
+      <i class="bi bi-cash-coin me-1"></i>Registrar Pago
+    </a>
+    {% endif %}
+    <a href="{{ url_for('cartera.prefacturas') }}" class="btn btn-outline-secondary btn-sm">Volver</a>
+  </div>
+</div>
+<div class="row g-3">
+  <div class="col-md-5">
+    <div class="card h-100"><div class="card-header">Datos Prefactura</div><div class="card-body">
+      <dl class="row mb-0">
+        <dt class="col-sm-5">Nro.</dt><dd class="col-sm-7"><strong>{{ prefactura.nro_prefactura }}</strong></dd>
+        <dt class="col-sm-5">Cliente</dt><dd class="col-sm-7">{{ prefactura.cliente.nombre }}</dd>
+        <dt class="col-sm-5">Fecha</dt><dd class="col-sm-7">{{ prefactura.fecha_generacion.strftime('%d/%m/%Y') }}</dd>
+        <dt class="col-sm-5">Período</dt>
+        <dd class="col-sm-7">{{ prefactura.fecha_desde.strftime('%d/%m/%Y') if prefactura.fecha_desde else '—' }} al {{ prefactura.fecha_hasta.strftime('%d/%m/%Y') if prefactura.fecha_hasta else '—' }}</dd>
+        <dt class="col-sm-5">Valor Total</dt><dd class="col-sm-7 fw-bold text-primary">$ {{ '{:,.0f}'.format(prefactura.valor_total) }}</dd>
+        <dt class="col-sm-5">Estado</dt>
+        <dd class="col-sm-7">
+          <span class="badge {% if prefactura.estado == 'Pendiente' %}bg-warning text-dark{% elif prefactura.estado == 'Pagada' %}bg-success{% else %}bg-info text-dark{% endif %}">
+            {{ prefactura.estado }}
+          </span>
+        </dd>
+      </dl>
+    </div></div>
+  </div>
+  <div class="col-md-7">
+    <div class="card h-100"><div class="card-header">Recibos de Pago</div><div class="card-body p-0">
+      <table class="table table-sm mb-0">
+        <thead><tr><th>Nro. Recibo</th><th>Fecha</th><th>Forma Pago</th><th class="text-end">Valor</th></tr></thead>
+        <tbody>
+          {% for r in prefactura.recibos %}
+          <tr>
+            <td><strong>{{ r.nro_recibo }}</strong></td>
+            <td>{{ r.fecha_pago.strftime('%d/%m/%Y') }}</td>
+            <td>{{ r.forma_pago.nombre if r.forma_pago else '—' }}</td>
+            <td class="text-end">$ {{ '{:,.0f}'.format(r.valor_pagado) }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4" class="text-center text-muted py-3">Sin pagos registrados</td></tr>
+          {% endfor %}
+        </tbody>
+        {% if prefactura.recibos.count() > 0 %}
+        <tfoot>
+          <tr class="table-light fw-bold">
+            <td colspan="3" class="text-end">TOTAL PAGADO</td>
+            <td class="text-end">$ {{ '{:,.0f}'.format(total_pagado) }}</td>
+          </tr>
+        </tfoot>
+        {% endif %}
+      </table>
+    </div></div>
+  </div>
+  <div class="col-12">
+    <div class="card"><div class="card-header">Atenciones Incluidas</div><div class="card-body p-0">
+      <table class="table table-hover table-sm mb-0">
+        <thead><tr><th>Consecutivo</th><th>Paciente</th><th>Fecha</th><th class="text-end">Valor</th></tr></thead>
+        <tbody>
+          {% for det in prefactura.atenciones %}
+          <tr>
+            <td><a href="{{ url_for('atenciones.ver', consecutivo=det.nro_consecutivo) }}">{{ det.nro_consecutivo }}</a></td>
+            <td>{{ det.atencion.paciente.nombre_completo if det.atencion and det.atencion.paciente else '—' }}</td>
+            <td>{{ det.atencion.fecha_atencion.strftime('%d/%m/%Y') if det.atencion else '—' }}</td>
+            <td class="text-end">$ {{ '{:,.0f}'.format(det.atencion.valor_total) if det.atencion else '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div></div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+{% if descargar_excel %}
+<script>
+window.addEventListener('load', function() {
+  var iframe = document.createElement('iframe');
+  iframe.style.display = 'none';
+  iframe.src = "{{ url_for('cartera.prefactura_excel', id=prefactura.id) }}";
+  document.body.appendChild(iframe);
+});
+</script>
+{% endif %}
+{% endblock %}

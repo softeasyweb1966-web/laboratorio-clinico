@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+{% block title %}Hoja de Trabajo{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+  <h4><i class="bi bi-journal-medical me-2 text-primary"></i>Hoja de Trabajo</h4>
+  <a href="{{ url_for('atenciones.nueva') }}" class="btn btn-primary btn-sm">
+    <i class="bi bi-plus-lg me-1"></i>Nueva Atención
+  </a>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body py-3">
+    <form class="row g-2 align-items-end" method="GET">
+      <div class="col-md-3">
+        <label class="form-label form-label-sm">Fecha desde</label>
+        <input type="date" class="form-control form-control-sm" name="fecha_desde" value="{{ fecha_desde }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label form-label-sm">Fecha hasta</label>
+        <input type="date" class="form-control form-control-sm" name="fecha_hasta" value="{{ fecha_hasta }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label form-label-sm">Estado</label>
+        <select class="form-select form-select-sm" name="estado">
+          <option value="">Todos</option>
+          <option value="Ingresado" {{ 'selected' if estado == 'Ingresado' }}>Ingresado</option>
+          <option value="Prefacturado" {{ 'selected' if estado == 'Prefacturado' }}>Prefacturado</option>
+          <option value="Cancelado" {{ 'selected' if estado == 'Cancelado' }}>Cancelado</option>
+          <option value="Anulado" {{ 'selected' if estado == 'Anulado' }}>Anulado</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label form-label-sm">Cliente</label>
+        <select class="form-select form-select-sm" name="cliente_id">
+          <option value="">Todos los clientes</option>
+          {% for c in clientes %}
+          <option value="{{ c.id }}" {{ 'selected' if cliente_id == (c.id|string) }}>{{ c.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-12 d-flex gap-2">
+        <button type="submit" class="btn btn-primary btn-sm">
+          <i class="bi bi-search me-1"></i>Consultar
+        </button>
+        <a href="{{ url_for('atenciones.hoja_trabajo') }}" class="btn btn-outline-secondary btn-sm">Limpiar</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span>Atenciones encontradas</span>
+    <span class="badge bg-primary">{{ atenciones|length }}</span>
+  </div>
+  <div class="card-body">
+    {% if atenciones %}
+      <div class="d-grid gap-3">
+        {% for a in atenciones %}
+        <div class="border rounded-3 p-3 bg-light-subtle">
+          <div class="d-flex flex-wrap justify-content-between gap-2 mb-2">
+            <div>
+              <div class="fw-bold text-primary">{{ a.nro_consecutivo }}</div>
+              <div class="small text-muted">
+                {{ a.fecha_atencion.strftime('%d/%m/%Y') }} · {{ a.fecha_hora_ingreso.strftime('%H:%M') if a.fecha_hora_ingreso else '—' }}
+              </div>
+            </div>
+            <div class="text-md-end">
+              <span class="badge {% if a.estado == 'Ingresado' %}bg-primary{% elif a.estado == 'Prefacturado' %}bg-warning text-dark{% elif a.estado == 'Anulado' %}bg-danger{% else %}bg-success{% endif %}">
+                {{ a.estado }}
+              </span>
+            </div>
+          </div>
+          <div class="row g-2 small mb-2">
+            <div class="col-md-4"><strong>Paciente:</strong> {{ a.paciente.nombre_completo if a.paciente else a.paciente_id }}</div>
+            <div class="col-md-4"><strong>Documento:</strong> {{ a.paciente_id }}</div>
+            <div class="col-md-4"><strong>Empresa:</strong> {{ a.cliente.nombre if a.cliente else '—' }}</div>
+            <div class="col-md-4"><strong>Autorización:</strong> {{ a.autorizacion or '—' }}</div>
+            <div class="col-md-4"><strong>Aut. transporte:</strong> {{ a.autorizacion_transporte or '—' }}</div>
+            <div class="col-md-4"><strong>Valor total:</strong> $ {{ '{:,.0f}'.format(a.valor_total) }}</div>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm mb-0">
+              <thead>
+                <tr>
+                  <th>Sec.</th>
+                  <th>CUPS</th>
+                  <th>Descripción</th>
+                  <th class="text-end">Valor</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for d in a.detalles %}
+                <tr>
+                  <td>{{ d.secuencia }}</td>
+                  <td>{{ d.cups_codigo }}</td>
+                  <td>
+                    {{ d.cups.descripcion if d.cups else '—' }}
+                    {% if d.cups and d.cups.es_transporte %}
+                    <span class="badge bg-info text-dark ms-1">Transporte</span>
+                    {% endif %}
+                  </td>
+                  <td class="text-end">$ {{ '{:,.0f}'.format(d.valor) }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="text-center text-muted py-4">No hay atenciones para los criterios seleccionados.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

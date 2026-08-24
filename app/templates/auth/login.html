@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Iniciar Sesión — Laboratorio Clínico</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body { background: linear-gradient(135deg, #1a2b4b 0%, #2e4a7a 100%); min-height: 100vh; display: flex; align-items: center; }
+    .login-card { max-width: 420px; width: 100%; margin: auto; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,.25); border: none; }
+    .login-card .card-header { background: #0d6efd; color: #fff; text-align: center; border-radius: 16px 16px 0 0 !important; padding: 2rem 1.5rem 1.25rem; }
+    .login-logo { font-size: 2.5rem; margin-bottom: .5rem; }
+    .login-title { font-size: 1.4rem; font-weight: 700; }
+    .login-sub { font-size: .85rem; opacity: .85; }
+    .login-card .card-body { padding: 2rem 2rem 1.5rem; }
+    .form-control:focus { border-color: #0d6efd; box-shadow: 0 0 0 .2rem rgba(13,110,253,.15); }
+    .btn-login { padding: .6rem; font-size: 1rem; font-weight: 600; border-radius: 8px; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="login-card card mx-auto">
+    <div class="card-header">
+      <div class="login-logo"><i class="bi bi-activity"></i></div>
+      <div class="login-title">LabClínico</div>
+      <div class="login-sub">Sistema de Gestión de Laboratorio</div>
+    </div>
+    <div class="card-body">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show py-2" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+      {% endwith %}
+
+      <form method="POST" autocomplete="off" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="mb-3">
+          <label class="form-label fw-semibold" for="username">
+            <i class="bi bi-person me-1"></i>Usuario
+          </label>
+          <input type="text" class="form-control" id="username" name="username"
+                 placeholder="Nombre de usuario" required autofocus>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold" for="password">
+            <i class="bi bi-lock me-1"></i>Contraseña
+          </label>
+          <div class="input-group">
+            <input type="password" class="form-control" id="password" name="password"
+                   placeholder="Contraseña" required>
+            <button type="button" class="btn btn-outline-secondary" id="togglePass" tabindex="-1">
+              <i class="bi bi-eye" id="eyeIcon"></i>
+            </button>
+          </div>
+        </div>
+        <div class="mb-4 d-flex align-items-center justify-content-between">
+          <div class="form-check mb-0">
+            <input class="form-check-input" type="checkbox" name="remember" id="remember">
+            <label class="form-check-label text-muted" for="remember">Recordarme</label>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary w-100 btn-login">
+          <i class="bi bi-box-arrow-in-right me-2"></i>Ingresar
+        </button>
+      </form>
+    </div>
+    <div class="card-footer text-center text-muted py-2" style="font-size:.78rem; border-radius: 0 0 16px 16px;">
+      Laboratorio Clínico &copy; 2026
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  document.getElementById('togglePass').addEventListener('click', function() {
+    var p = document.getElementById('password');
+    var icon = document.getElementById('eyeIcon');
+    if (p.type === 'password') {
+      p.type = 'text'; icon.className = 'bi bi-eye-slash';
+    } else {
+      p.type = 'password'; icon.className = 'bi bi-eye';
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+OBJETIVO GTENERAL
+
+1. La carpeta laboratorio tiene un aplicativo que ya funciona y la idea es integrarlo 
+	con el aplicativo que hay en la carpeta resultados.
+2. Es decir en laboratorio podemos registrar unas ordenes de exámenes, pero no podemos
+	registrar los resultados, por eso surge la necesidad de integrar estos 2 proyectos
+3. El proyecto se debe manejar como se manejan los dos proyectos que vamos a integrar en 
+	cuanto a python, flask, pandas y postgress como gestos de BD.
+4. Se debe siempre manejar un ambiente virtual
+5. Tenemos una BD local de postgress puede ver la configuración en postgress.txt, ojo se
+	debe manejar una BD independiente de las que ya existen para este proyecto, tener
+	mucho cuidado de no mezclarse con otras BD de otros proyectos.
+6. Características del desarrollo , debe ser 100% reactive, por lo tanto debemos evitar el
+	uso de tarjetas pesadas, debe ser un software amigable, intuitivo,sencillo y muy 
+	útil. Debe tener los CRUD respectivos, manejar ayudas dinámicas, permitir crear 
+	los roles por usuario, tener como usuario administrador EASY ese nunca cambia, lo
+	único que cambia es la clave.
+7. Es un proyecto que debe funcionar en la WEB (Multicliente-multiusuario) y también en el
+	localhost para aquellos clientes que no quieren salir a la nube
+8. Debemos crear un repositorio en git       

@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block title %}Países{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+  <h4><i class="bi bi-globe2 me-2 text-primary"></i>Países</h4>
+  <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalPais">
+    <i class="bi bi-plus-lg me-1"></i>Nuevo País
+  </button>
+</div>
+<div class="card">
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+      <thead><tr><th>Código</th><th>Nombre</th><th>Estado</th><th></th></tr></thead>
+      <tbody>
+        {% for p in paises %}
+        <tr>
+          <td><strong>{{ p.codigo }}</strong></td>
+          <td>{{ p.nombre }}</td>
+          <td><span class="badge {{ 'badge-activo' if p.estado else 'badge-inactivo' }}">{{ 'Activo' if p.estado else 'Inactivo' }}</span></td>
+          <td><button class="btn btn-sm btn-outline-primary"
+            onclick='editarPais({{ p.id }}, "{{ p.codigo }}", "{{ p.nombre }}", {{ 'true' if p.estado else 'false' }})'>
+            <i class="bi bi-pencil"></i>
+          </button></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="text-center text-muted py-4">No hay países registrados.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal fade" id="modalPais" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="{{ url_for('admin.pais_guardar') }}" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="id" id="paisId">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalTitle">Nuevo País</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Código <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" name="codigo" id="paisCodigo" maxlength="5" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Nombre <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" name="nombre" id="paisNombre" required>
+          </div>
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" name="estado" id="paisEstado" checked>
+            <label class="form-check-label" for="paisEstado">Activo</label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<script>
+function editarPais(id, codigo, nombre, estado) {
+  document.getElementById('modalTitle').textContent = 'Editar País';
+  document.getElementById('paisId').value = id;
+  document.getElementById('paisCodigo').value = codigo;
+  document.getElementById('paisNombre').value = nombre;
+  document.getElementById('paisEstado').checked = estado;
+  new bootstrap.Modal(document.getElementById('modalPais')).show();
+}
+</script>
+{% endblock %}

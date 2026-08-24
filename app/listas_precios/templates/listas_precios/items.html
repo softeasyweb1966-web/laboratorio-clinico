@@ -1,0 +1,222 @@
+{% extends 'base.html' %}
+{% block title %}Servicios — {{ lista.nombre }}{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+  <div>
+    <h4 class="mb-0">
+      <i class="bi bi-list-ul me-2 text-primary"></i>
+      <strong>{{ lista.codigo }}</strong> — {{ lista.nombre }}
+    </h4>
+    <small class="text-muted">
+      {{ lista.items.count() }} servicio(s) en esta lista
+      {% if lista.clientes.count() > 0 %}
+        &nbsp;·&nbsp;
+        <i class="bi bi-building me-1"></i>
+        {% for c in lista.clientes %}{{ c.nombre }}{% if not loop.last %}, {% endif %}{% endfor %}
+      {% endif %}
+    </small>
+  </div>
+  <a href="{{ url_for('listas.lista') }}" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-arrow-left me-1"></i>Volver
+  </a>
+</div>
+
+<div class="row g-3">
+
+  <!-- Panel izquierdo: agregar servicio -->
+  <div class="col-md-4">
+    <div class="card h-100">
+      <div class="card-header">
+        <i class="bi bi-plus-circle me-1 text-success"></i>Agregar Servicio
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('listas.item_agregar', id=lista.id) }}" novalidate>
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="mb-3">
+            <label class="form-label">Buscar CUPS</label>
+            <input type="text" class="form-control" id="cupsBusq"
+                   placeholder="Código o descripción..." autocomplete="off">
+            <div id="cupsSug" class="list-group position-absolute" style="z-index:1000; max-width:350px;"></div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Código CUPS <span class="text-danger">*</span></label>
+            <input type="text" class="form-control text-uppercase" name="cups_codigo"
+                   id="cupsCodigoInput" required placeholder="Ej: 903841">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Descripción</label>
+            <div class="form-control bg-light small" id="cupsDescInput" style="min-height:38px;">
+              <span class="text-muted">—</span>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Valor <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <span class="input-group-text">$</span>
+              <input type="number" class="form-control" name="valor" id="cupsValorInput"
+                     min="0" step="1" required placeholder="0">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-success w-100">
+            <i class="bi bi-plus-lg me-1"></i>Agregar / Actualizar
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel derecho: tabla de servicios -->
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-table me-1"></i>Servicios de la Lista</span>
+        <form class="d-flex gap-2" method="GET">
+          <input type="search" class="form-control form-control-sm" name="q"
+                 value="{{ q }}" placeholder="Filtrar..." style="max-width:200px;">
+          <button type="submit" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-search"></i>
+          </button>
+          {% if q %}
+          <a href="{{ url_for('listas.editar_items', id=lista.id) }}"
+             class="btn btn-outline-secondary btn-sm">✕</a>
+          {% endif %}
+        </form>
+      </div>
+      <div class="card-body p-0" style="max-height:600px; overflow-y:auto;">
+        <table class="table table-hover table-sm mb-0">
+          <thead class="sticky-top bg-white">
+            <tr>
+              <th>Código</th>
+              <th>Descripción</th>
+              <th class="text-end" style="min-width:140px;">Valor</th>
+              <th class="text-center"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in items %}
+            <tr id="fila-{{ item.id }}">
+              <td>
+                <strong>{{ item.cups_codigo }}</strong>
+                {% if item.cups.es_transporte %}
+                <span class="badge bg-info text-dark ms-1" style="font-size:.7rem;">Trans.</span>
+                {% endif %}
+              </td>
+              <td class="small">{{ item.cups.descripcion if item.cups else '—' }}</td>
+              <td class="text-end">
+                <!-- Edición inline del valor -->
+                <div class="input-group input-group-sm justify-content-end" style="max-width:130px; margin-left:auto;">
+                  <span class="input-group-text">$</span>
+                  <input type="number" class="form-control form-control-sm text-end valor-input"
+                         data-item-id="{{ item.id }}"
+                         data-lista-id="{{ lista.id }}"
+                         value="{{ item.valor|int }}" min="0" step="1">
+                </div>
+              </td>
+              <td class="text-center">
+                <form method="POST"
+                      action="{{ url_for('listas.item_eliminar', id=lista.id, item_id=item.id) }}"
+                      onsubmit="return confirm('¿Eliminar {{ item.cups_codigo }} de la lista?')"
+                      class="d-inline">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                    <i class="bi bi-trash3"></i>
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="4" class="text-center text-muted py-4">
+                <i class="bi bi-inbox d-block fs-3 mb-2 opacity-25"></i>
+                No hay servicios{% if q %} que coincidan con "{{ q }}"{% endif %}.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% if items %}
+      <div class="card-footer d-flex justify-content-between text-muted small">
+        <span>{{ items|length }} servicio(s){% if q %} filtrados{% endif %}</span>
+        <span>Total tarifa: <strong>$
+          {{ '{:,.0f}'.format(items | sum(attribute='valor')) }}
+        </strong></span>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── Búsqueda CUPS para el formulario de agregar ───────────────────────────
+document.getElementById('cupsBusq').addEventListener('input', function() {
+  var q = this.value.trim();
+  var cont = document.getElementById('cupsSug');
+  if (q.length < 2) { cont.innerHTML = ''; return; }
+  fetch('/cups/buscar?q=' + encodeURIComponent(q))
+    .then(r => r.json())
+    .then(data => {
+      cont.innerHTML = '';
+      data.forEach(function(c) {
+        var a = document.createElement('a');
+        a.className = 'list-group-item list-group-item-action py-1 small';
+        a.innerHTML = '<strong>' + c.codigo + '</strong> — ' + c.descripcion +
+          ' <span class="float-end text-primary">$' +
+          Number(c.valor).toLocaleString('es-CO') + '</span>';
+        a.href = '#';
+        a.onclick = function(e) {
+          e.preventDefault();
+          document.getElementById('cupsCodigoInput').value = c.codigo;
+          document.getElementById('cupsDescInput').textContent = c.descripcion;
+          document.getElementById('cupsValorInput').value = Math.round(c.valor);
+          document.getElementById('cupsBusq').value = c.codigo + ' — ' + c.descripcion;
+          cont.innerHTML = '';
+        };
+        cont.appendChild(a);
+      });
+    });
+});
+
+// Cerrar sugerencias al click fuera
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('#cupsBusq') && !e.target.closest('#cupsSug'))
+    document.getElementById('cupsSug').innerHTML = '';
+});
+
+// ── Edición inline del valor (debounce 800ms) ─────────────────────────────
+var timers = {};
+document.querySelectorAll('.valor-input').forEach(function(inp) {
+  inp.addEventListener('change', function() {
+    var itemId   = this.dataset.itemId;
+    var listaId  = this.dataset.listaId;
+    var valor    = this.value;
+    var fila     = document.getElementById('fila-' + itemId);
+
+    clearTimeout(timers[itemId]);
+    timers[itemId] = setTimeout(function() {
+      // Obtener token CSRF del meta o de la página
+      var csrf = document.querySelector('input[name=csrf_token]').value;
+      var fd = new FormData();
+      fd.append('valor', valor);
+      fd.append('csrf_token', csrf);
+
+      fetch('/listas/' + listaId + '/items/' + itemId + '/valor', {
+        method: 'POST', body: fd
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.ok) {
+          fila.style.background = '#d1fae5';
+          setTimeout(() => fila.style.background = '', 1000);
+        } else {
+          fila.style.background = '#fee2e2';
+        }
+      });
+    }, 800);
+  });
+});
+</script>
+{% endblock %}

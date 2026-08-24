@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block title %}Prefacturas{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+  <h4><i class="bi bi-file-earmark-text me-2 text-primary"></i>Prefacturas</h4>
+  <a href="{{ url_for('cartera.prefactura_nueva') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Nueva Prefactura</a>
+</div>
+<div class="card mb-3"><div class="card-body py-2">
+  <form class="row g-2 align-items-center" method="GET">
+    <div class="col-md-4">
+      <input type="search" class="form-control form-control-sm" name="q" value="{{ q }}" placeholder="Nro. prefactura o cliente...">
+    </div>
+    <div class="col-md-3">
+      <select class="form-select form-select-sm" name="estado">
+        <option value="">— Todos —</option>
+        <option value="Pendiente" {{ 'selected' if estado == 'Pendiente' }}>Pendiente</option>
+        <option value="Parcial" {{ 'selected' if estado == 'Parcial' }}>Parcial</option>
+        <option value="Pagada" {{ 'selected' if estado == 'Pagada' }}>Pagada</option>
+      </select>
+    </div>
+    <div class="col-auto">
+      <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-search me-1"></i>Filtrar</button>
+    </div>
+  </form>
+</div></div>
+<div class="card"><div class="card-body p-0">
+  <table class="table table-hover mb-0">
+    <thead><tr><th>Nro.</th><th>Cliente</th><th>Fecha</th><th class="text-end">Valor</th><th>Estado</th><th></th></tr></thead>
+    <tbody>
+      {% for pf in prefacturas %}
+      <tr>
+        <td><strong>{{ pf.nro_prefactura }}</strong></td>
+        <td>{{ pf.cliente.nombre }}</td>
+        <td>{{ pf.fecha_generacion.strftime('%d/%m/%Y') }}</td>
+        <td class="text-end">$ {{ '{:,.0f}'.format(pf.valor_total) }}</td>
+        <td>
+          <span class="badge {% if pf.estado == 'Pendiente' %}bg-warning text-dark{% elif pf.estado == 'Pagada' %}bg-success{% else %}bg-info text-dark{% endif %}">
+            {{ pf.estado }}
+          </span>
+        </td>
+        <td>
+          <div class="d-flex gap-1">
+            <a href="{{ url_for('cartera.prefactura_ver', id=pf.id) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></a>
+            <a href="{{ url_for('cartera.prefactura_excel', id=pf.id) }}" class="btn btn-sm btn-outline-success" title="Descargar Excel"><i class="bi bi-file-earmark-excel"></i></a>
+            {% if pf.estado != 'Pagada' %}
+            <a href="{{ url_for('cartera.recibo_nuevo', prefactura_id=pf.id) }}" class="btn btn-sm btn-outline-success" title="Registrar Pago"><i class="bi bi-cash-coin"></i></a>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" class="text-center text-muted py-4">No hay prefacturas.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div></div>
+{% endblock %}

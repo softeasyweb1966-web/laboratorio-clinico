@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Editar' if order else 'Nueva' }} Orden{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <h4><i class="bi bi-file-plus me-2"></i>{{ 'Editar' if order else 'Nueva' }} Orden</h4>
+    <hr>
+    <form method="post" class="card p-4 shadow-sm">
+      <div class="row g-3">
+        <div class="col-md-5">
+          <label class="form-label fw-semibold">Consecutivo / N° de Orden *</label>
+          <input type="text" name="consecutive" class="form-control" required
+                 value="{{ order.consecutive if order else '' }}"
+                 placeholder="Ej: ORD-2024-001">
+        </div>
+        <div class="col-md-7">
+          <label class="form-label fw-semibold">Médico remitente</label>
+          <input type="text" name="attending_physician" class="form-control"
+                 value="{{ order.attending_physician if order else '' }}">
+        </div>
+
+        <div class="col-12">
+          <label class="form-label fw-semibold">Paciente *</label>
+          <div class="input-group">
+            <select name="patient_id" class="form-select" id="patientSelect">
+              <option value="">– Seleccione o busque –</option>
+              {% for p in patients %}
+              <option value="{{ p.id }}" {{ 'selected' if order and order.patient_id == p.id }}>
+                {{ p.name }} ({{ p.document }})
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <small class="text-muted">
+            ¿Paciente nuevo?
+            <a href="{{ url_for('orders.patient_new') }}" target="_blank">Registrar paciente</a>
+          </small>
+        </div>
+
+        <div class="col-12">
+          <label class="form-label">Diagnóstico</label>
+          <input type="text" name="diagnosis" class="form-control"
+                 value="{{ order.diagnosis if order else '' }}">
+        </div>
+        <div class="col-12">
+          <label class="form-label">Notas</label>
+          <textarea name="notes" class="form-control" rows="2">{{ order.notes if order else '' }}</textarea>
+        </div>
+        <div class="col-12">
+          <label class="form-label fw-semibold">Exámenes solicitados *</label>
+          <div class="border rounded p-2" style="max-height:220px; overflow-y:auto">
+            {% for exam in exams %}
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="exam_ids" value="{{ exam.id }}" id="exam{{ exam.id }}"
+                     {{ 'checked' if exam.id in selected_exam_ids }}>
+              <label class="form-check-label" for="exam{{ exam.id }}">
+                <code>{{ exam.code }}</code> {{ exam.name }}
+              </label>
+            </div>
+            {% else %}
+            <p class="text-muted mb-0">No hay exámenes activos en el catálogo.</p>
+            {% endfor %}
+          </div>
+          <div class="form-text">Solo los exámenes seleccionados podrán registrarse para esta orden.</div>
+        </div>
+        <div class="col-12 d-flex gap-2">
+          <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i>Guardar</button>
+          <a href="{{ url_for('orders.list_orders') }}" class="btn btn-secondary">Cancelar</a>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

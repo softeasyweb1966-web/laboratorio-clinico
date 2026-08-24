@@ -1,0 +1,262 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Editar' if cliente else 'Nuevo' }} Cliente{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h4><i class="bi bi-building me-2 text-primary"></i>{{ 'Editar Cliente' if cliente else 'Nuevo Cliente' }}</h4>
+</div>
+<div class="card"><div class="card-body">
+  <form method="POST" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="row g-3">
+      <div class="col-md-3">
+        <label class="form-label">Código <span class="text-danger">*</span></label>
+        <input type="text" class="form-control text-uppercase" name="codigo" id="codigoCliente"
+               value="{{ form_data.codigo }}"
+               {{ 'readonly' if cliente }} required maxlength="10"
+               placeholder="Auto desde nombre">
+        {% if not cliente %}
+        <div class="form-text">Se genera automáticamente. Puede editarlo.</div>
+        {% endif %}
+      </div>
+      <div class="col-md-9">
+        <label class="form-label">Nombre / Razón Social <span class="text-danger">*</span></label>
+        <input type="text" class="form-control" name="nombre" id="nombreCliente"
+               value="{{ form_data.nombre }}" required>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Tipo Identificación</label>
+        <select class="form-select" name="tipo_identificacion">
+          <option value="">—</option>
+          <option value="NIT" {{ 'selected' if form_data.tipo_identificacion == 'NIT' }}>NIT</option>
+          <option value="CC" {{ 'selected' if form_data.tipo_identificacion == 'CC' }}>CC</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Número Identificación</label>
+        <input type="text" class="form-control" name="nro_identificacion" value="{{ form_data.nro_identificacion }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">País</label>
+        <select class="form-select" name="pais_id" id="paisCliente" onchange="cargarDepartamentosCliente(this.value)">
+          <option value="">— Seleccione —</option>
+          {% for p in paises %}
+          <option value="{{ p.id }}" {{ 'selected' if form_data.pais_id == (p.id|string) }}>{{ p.codigo }} - {{ p.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Departamento</label>
+        <select class="form-select" name="departamento_id" id="departamentoCliente"
+                onchange="cargarMunicipiosCliente(this.value)">
+          <option value="">— Seleccione —</option>
+          {% for d in departamentos %}
+          <option value="{{ d.id }}" {{ 'selected' if form_data.departamento_id == (d.id|string) }}>{{ d.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Municipio / Localidad</label>
+        <select class="form-select" name="municipio_id" id="municipioCliente">
+          <option value="">— Seleccione —</option>
+          {% for m in municipios %}
+          <option value="{{ m.id }}" {{ 'selected' if form_data.municipio_id == (m.id|string) }}>{{ m.nombre }}</option>
+          {% endfor %}
+        </select>
+        <div class="form-text">La selección de municipio se carga dinámicamente según el país y el departamento.</div>
+      </div>
+      <div class="col-md-8">
+        <label class="form-label">Lista de Precios / Tarifa Asignada</label>
+        <input type="hidden" name="lista_precio_id" id="listaPrecioId"
+               value="{{ form_data.lista_precio_id }}">
+        <input type="text" class="form-control" id="listaBusqueda"
+               value="{{ (lista_precio_seleccionada.codigo + ' — ' + lista_precio_seleccionada.nombre) if lista_precio_seleccionada else '' }}"
+               placeholder="Buscar lista por código o nombre..." autocomplete="off">
+        <div id="listaSugerencias" class="list-group position-absolute" style="z-index:1050; min-width:320px;"></div>
+        <div class="form-text">
+          <i class="bi bi-info-circle me-1"></i>
+          Si no tiene tarifa especial, deja vacío y se usarán los precios generales CUPS.
+          <a href="{{ url_for('listas.lista') }}" target="_blank" class="ms-2">
+            <i class="bi bi-tags me-1"></i>Ver listas
+          </a>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">% IVA</label>
+        <input type="number" class="form-control" name="porcentaje_iva" step="0.01" min="0" max="100"
+               value="{{ form_data.porcentaje_iva }}">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">% Retención Fuente</label>
+        <input type="number" class="form-control" name="porcentaje_retfte" step="0.01" min="0" max="100"
+               value="{{ form_data.porcentaje_retfte }}">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Código / Nombre de Tarifa</label>
+        <input type="text" class="form-control" name="codigo_tarifa"
+               value="{{ form_data.codigo_tarifa }}"
+               placeholder="Ej: COLSANITAS, PARTICULAR, tarifa afa...">
+        <div class="form-text">Identifica la lista de precios asignada a este cliente.</div>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Dirección</label>
+        <input type="text" class="form-control" name="direccion" value="{{ form_data.direccion }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Teléfono</label>
+        <input type="text" class="form-control" name="telefono" value="{{ form_data.telefono }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Email</label>
+        <input type="email" class="form-control" name="email" value="{{ form_data.email }}">
+      </div>
+      <div class="col-12">
+        <div class="accordion" id="accCliente">
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#colFact">
+                <i class="bi bi-receipt me-2"></i>Contacto de Facturación
+              </button>
+            </h2>
+            <div id="colFact" class="accordion-collapse collapse" data-bs-parent="#accCliente">
+              <div class="accordion-body">
+                <div class="row g-2">
+                  <div class="col-md-4"><label class="form-label">Nombre</label><input type="text" class="form-control" name="contacto_facturacion" value="{{ form_data.contacto_facturacion }}"></div>
+                  <div class="col-md-4"><label class="form-label">Dirección</label><input type="text" class="form-control" name="dir_facturacion" value="{{ form_data.dir_facturacion }}"></div>
+                  <div class="col-md-2"><label class="form-label">Teléfono</label><input type="text" class="form-control" name="tel_facturacion" value="{{ form_data.tel_facturacion }}"></div>
+                  <div class="col-md-2"><label class="form-label">Email</label><input type="email" class="form-control" name="email_facturacion" value="{{ form_data.email_facturacion }}"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#colAdmin">
+                <i class="bi bi-person-gear me-2"></i>Contacto Administrativo
+              </button>
+            </h2>
+            <div id="colAdmin" class="accordion-collapse collapse" data-bs-parent="#accCliente">
+              <div class="accordion-body">
+                <div class="row g-2">
+                  <div class="col-md-4"><label class="form-label">Nombre</label><input type="text" class="form-control" name="contacto_administrativo" value="{{ form_data.contacto_administrativo }}"></div>
+                  <div class="col-md-4"><label class="form-label">Dirección</label><input type="text" class="form-control" name="dir_administrativo" value="{{ form_data.dir_administrativo }}"></div>
+                  <div class="col-md-2"><label class="form-label">Teléfono</label><input type="text" class="form-control" name="tel_administrativo" value="{{ form_data.tel_administrativo }}"></div>
+                  <div class="col-md-2"><label class="form-label">Email</label><input type="email" class="form-control" name="email_administrativo" value="{{ form_data.email_administrativo }}"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-12 d-flex align-items-center">
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" name="estado" id="estado"
+                 {{ 'checked' if form_data.estado }}>
+          <label class="form-check-label" for="estado">Cliente activo</label>
+        </div>
+      </div>
+    </div>
+    <div class="d-flex gap-2 mt-4">
+      <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Guardar</button>
+      <a href="{{ url_for('clientes.lista') }}" class="btn btn-outline-secondary">Cancelar</a>
+    </div>
+  </form>
+</div></div>
+{% endblock %}
+{% block scripts %}
+<script>
+{% if not cliente %}
+function generarCodigo(nombre) {
+  var sinTildes = nombre.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  var limpio = sinTildes.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  return limpio.substring(0, 6);
+}
+document.getElementById('nombreCliente').addEventListener('input', function() {
+  var cod = document.getElementById('codigoCliente');
+  if (!cod.dataset.editado) cod.value = generarCodigo(this.value);
+});
+document.getElementById('codigoCliente').addEventListener('input', function() {
+  this.dataset.editado = 'true';
+  this.value = this.value.toUpperCase();
+});
+{% endif %}
+
+function cargarDepartamentosCliente(paisId) {
+  var selDepto = document.getElementById('departamentoCliente');
+  var selMuni = document.getElementById('municipioCliente');
+  selDepto.innerHTML = '<option value="">— Cargando... —</option>';
+  selMuni.innerHTML = '<option value="">— Seleccione —</option>';
+  if (!paisId) {
+    selDepto.innerHTML = '<option value="">— Seleccione —</option>';
+    return;
+  }
+  fetch('/admin/api/departamentos-por-pais/' + paisId)
+    .then(r => r.json())
+    .then(data => {
+      selDepto.innerHTML = '<option value="">— Seleccione —</option>';
+      data.forEach(function(d) {
+        selDepto.innerHTML += `<option value="${d.id}">${d.nombre}</option>`;
+      });
+    });
+}
+
+function cargarMunicipiosCliente(deptoId) {
+  var sel = document.getElementById('municipioCliente');
+  sel.innerHTML = '<option value="">— Cargando... —</option>';
+  if (!deptoId) {
+    sel.innerHTML = '<option value="">— Seleccione —</option>';
+    return;
+  }
+  fetch('/admin/api/municipios-por-depto/' + deptoId)
+    .then(r => r.json())
+    .then(data => {
+      sel.innerHTML = '<option value="">— Seleccione —</option>';
+      data.forEach(function(m) {
+        sel.innerHTML += `<option value="${m.id}">${m.nombre}${m.es_localidad ? ' (Loc.)' : ''}</option>`;
+      });
+    });
+}
+
+document.getElementById('listaBusqueda').addEventListener('input', function() {
+  var q = this.value.trim();
+  var cont = document.getElementById('listaSugerencias');
+  if (q.length < 1) { cont.innerHTML = ''; return; }
+  fetch('/listas/api/buscar?q=' + encodeURIComponent(q))
+    .then(r => r.json())
+    .then(data => {
+      cont.innerHTML = '';
+      if (data.length === 0) {
+        cont.innerHTML = '<div class="list-group-item text-muted small py-1">Sin resultados</div>';
+        return;
+      }
+      data.forEach(function(lp) {
+        var a = document.createElement('a');
+        a.className = 'list-group-item list-group-item-action py-1 small';
+        a.innerHTML = '<strong>' + lp.codigo + '</strong> — ' + lp.nombre +
+          ' <span class="badge bg-info text-dark float-end">' + lp.total_items + ' servicios</span>';
+        a.href = '#';
+        a.onclick = function(e) {
+          e.preventDefault();
+          document.getElementById('listaPrecioId').value = lp.id;
+          document.getElementById('listaBusqueda').value = lp.codigo + ' — ' + lp.nombre;
+          cont.innerHTML = '';
+        };
+        cont.appendChild(a);
+      });
+    });
+});
+
+document.getElementById('listaBusqueda').addEventListener('keydown', function(e) {
+  if (e.key === 'Delete' || e.key === 'Backspace') {
+    if (this.value === '') {
+      document.getElementById('listaPrecioId').value = '';
+    }
+  }
+});
+
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('#listaBusqueda') && !e.target.closest('#listaSugerencias')) {
+    document.getElementById('listaSugerencias').innerHTML = '';
+  }
+});
+</script>
+{% endblock %}

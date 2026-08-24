@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}AtenciÃ³n {{ order.consecutive }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-3">
+  <h4><i class="bi bi-file-text me-2"></i>AtenciÃ³n {{ order.consecutive }}</h4>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('orders.order_edit', order_id=order.id) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-pencil me-1"></i>Gestionar en laboratorio</a>
+    <a href="{{ url_for('results.search') }}?consecutive={{ order.consecutive }}" class="btn btn-success btn-sm">
+      <i class="bi bi-pencil-square me-1"></i>Registrar resultado
+    </a>
+  </div>
+</div>
+<hr class="mt-1">
+<div class="row g-3">
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-header bg-light fw-semibold">InformaciÃ³n de la atenciÃ³n</div>
+      <div class="card-body small">
+        <div><strong>Consecutivo:</strong> {{ order.consecutive }}</div>
+        <div><strong>Fecha:</strong> {{ order.date.strftime('%Y-%m-%d %H:%M') }}</div>
+        {% if order.attending_physician %}<div><strong>Atiende:</strong> {{ order.attending_physician }}</div>{% endif %}
+        {% if order.diagnosis %}<div><strong>AutorizaciÃ³n:</strong> {{ order.diagnosis }}</div>{% endif %}
+        <div><strong>Estado:</strong> {{ order.estado }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-header bg-light fw-semibold">Paciente</div>
+      <div class="card-body small">
+        <div><strong>{{ order.patient.name }}</strong></div>
+        <div>{{ order.patient.document_type }}: {{ order.patient.document }}</div>
+        {% if order.patient.birth_date %}<div>{{ order.patient.birth_date }} â€“ {{ order.patient.age }} aÃ±os</div>{% endif %}
+        {% if order.patient.gender %}<div>{{ 'Masculino' if order.patient.gender=='M' else 'Femenino' }}</div>{% endif %}
+        {% if order.patient.phone %}<div>Tel: {{ order.patient.phone }}</div>{% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-12">
+    <div class="card shadow-sm mb-3">
+      <div class="card-header fw-semibold">ExÃ¡menes solicitados</div>
+      <div class="card-body py-2">
+        {% for exam in requested_exams %}
+        <span class="badge bg-secondary me-1"><code class="text-white">{{ exam.code }}</code> {{ exam.name }}</span>
+        {% else %}
+        <span class="text-muted small">No se encontraron exÃ¡menes del catÃ¡logo vinculados a esta atenciÃ³n.</span>
+        {% endfor %}
+        {% if missing_codes %}
+        <div class="small text-warning mt-2">
+          CÃ³digos sin plantilla asociada: {{ missing_codes|join(', ') }}.
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    <div class="card shadow-sm">
+      <div class="card-header fw-semibold">Resultados registrados</div>
+      <div class="card-body">
+        {% set results = order.results.all() %}
+        {% if results %}
+        <div class="table-responsive">
+          <table class="table table-sm table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr><th>Examen</th><th>Fecha</th><th>BacteriÃ³logo</th><th>Estado</th><th></th></tr>
+            </thead>
+            <tbody>
+              {% for r in results %}
+              <tr>
+                <td>{{ r.exam.name }}</td>
+                <td>{{ r.date.strftime('%Y-%m-%d') }}</td>
+                <td>{{ r.bacteriologist.name }}</td>
+                <td><span class="badge bg-{{ 'success' if r.status=='final' else ('primary' if r.status=='approved' else 'warning text-dark') }}">{{ r.status }}</span></td>
+                <td>
+                  <a href="{{ url_for('results.result_detail', result_id=r.id) }}" class="btn btn-xs btn-sm btn-outline-primary">
+                    <i class="bi bi-eye"></i>
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="text-muted mb-0">AÃºn no hay resultados para esta atenciÃ³n.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

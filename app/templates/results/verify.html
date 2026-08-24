@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Verificación de Autenticidad{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-header bg-success text-white text-center py-3">
+        <i class="bi bi-patch-check-fill display-5"></i>
+        <h5 class="mt-2 mb-0">Resultado Verificado</h5>
+      </div>
+      <div class="card-body p-4">
+        <table class="table table-borderless table-sm mb-0">
+          <tr><th>Paciente:</th><td>{{ result.order.patient.name }}</td></tr>
+          <tr><th>Documento:</th><td>{{ result.order.patient.document }}</td></tr>
+          <tr><th>Examen:</th><td>{{ result.exam.name }}</td></tr>
+          <tr><th>Fecha:</th><td>{{ result.date.strftime('%Y-%m-%d %H:%M') }}</td></tr>
+          <tr><th>Bacteriólogo:</th><td>{{ result.bacteriologist.name }}</td></tr>
+          <tr><th>Estado:</th>
+            <td><span class="badge bg-{{ 'success' if result.status=='final' else ('primary' if result.status=='approved' else 'warning text-dark') }}">
+              {{ result.status.upper() }}
+            </span></td>
+          </tr>
+          <tr><th>Token:</th><td><code>{{ result.qr_token }}</code></td></tr>
+        </table>
+        <div class="mt-3 text-center">
+          <small class="text-muted">Este resultado ha sido verificado y corresponde a un documento auténtico emitido por el laboratorio.</small>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

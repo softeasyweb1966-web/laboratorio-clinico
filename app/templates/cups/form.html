@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Editar' if cups else 'Nuevo' }} CUPS{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h4><i class="bi bi-clipboard2-pulse me-2 text-primary"></i>{{ 'Editar' if cups else 'Nuevo' }} CUPS</h4>
+</div>
+<div class="row"><div class="col-md-7">
+  <div class="card"><div class="card-body">
+    <form method="POST" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">Código <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" name="codigo" value="{{ cups.codigo if cups else '' }}"
+                 {{ 'readonly' if cups }} required maxlength="10">
+        </div>
+        <div class="col-md-8">
+          <label class="form-label">Descripción <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" name="descripcion" value="{{ cups.descripcion if cups else '' }}" required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Valor</label>
+          <div class="input-group">
+            <span class="input-group-text">$</span>
+            <input type="number" class="form-control" name="valor" step="0.01" min="0"
+                   value="{{ cups.valor if cups else '0' }}">
+          </div>
+        </div>
+        <div class="col-md-4 d-flex align-items-end">
+          <div class="form-check form-switch mb-2">
+            <input class="form-check-input" type="checkbox" name="es_transporte" id="esTransporte"
+                   {{ 'checked' if cups and cups.es_transporte }}>
+            <label class="form-check-label" for="esTransporte">CUPS de Transporte</label>
+          </div>
+        </div>
+        <div class="col-md-4 d-flex align-items-end">
+          <div class="form-check form-switch mb-2">
+            <input class="form-check-input" type="checkbox" name="estado" id="estado"
+                   {{ 'checked' if not cups or cups.estado }}>
+            <label class="form-check-label" for="estado">Activo</label>
+          </div>
+        </div>
+      </div>
+      <div class="d-flex gap-2 mt-4">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Guardar</button>
+        <a href="{{ url_for('cups.lista') }}" class="btn btn-outline-secondary">Cancelar</a>
+      </div>
+    </form>
+  </div></div>
+</div></div>
+{% endblock %}

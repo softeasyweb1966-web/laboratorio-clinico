@@ -1,0 +1,847 @@
+{% extends "base.html" %}
+{% block title %}Diseñador de Plantilla – {{ exam.name }}{% endblock %}
+{% block extra_head %}
+<style>
+/* ===== Layout principal ===== */
+.designer-top { display: flex; gap: 16px; margin-bottom: 12px; align-items: flex-start; }
+.designer-grid-wrap { flex: 1; overflow: auto; border: 1px solid #dee2e6; border-radius: 8px; background: #f8f9fa; padding: 10px; max-height: 50vh; }
+.designer-props { width: 300px; min-width: 300px; }
+
+/* ===== Grid ===== */
+#designerGrid { border-collapse: collapse; user-select: none; width: max-content; table-layout: fixed; background: #fff; }
+#designerGrid col { min-width: 20px; }
+#designerGrid td {
+  border: 1px solid #b0b0b0;
+  height: 34px;
+  padding: 3px 6px;
+  cursor: pointer;
+  vertical-align: middle;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#designerGrid td:hover { box-shadow: inset 0 0 0 2px rgba(13,110,253,0.3); }
+#designerGrid td.selected { background: #cfe2ff !important; outline: 2px solid #0d6efd; z-index: 1; }
+
+/* Cell type colors */
+#designerGrid td.cell-header { background: #d0e4ff; font-weight: bold; text-align: center; }
+#designerGrid td.cell-label { background: #f8f9fa; }
+#designerGrid td.cell-result { background: #d1e7dd; border-style: dashed; border-color: #198754; }
+#designerGrid td.cell-fixed { background: #fff3cd; }
+#designerGrid td.cell-blank { background: #fff; }
+#designerGrid td.cell-units { background: #e8daef; }
+
+/* Column resize handles */
+.col-resize-bar {
+  display: flex; align-items: stretch; gap: 4px; padding: 8px;
+  border: 1px solid #dee2e6; margin-bottom: 8px; background: #fff;
+  border-radius: 6px; overflow-x: auto;
+}
+.col-resize-bar .col-handle {
+  flex: 0 0 auto; min-width: 76px; text-align: center; font-size: 10px; color: #495057;
+  position: relative; cursor: default; padding: 4px 8px; border: 1px solid #dee2e6;
+  border-radius: 4px; background: #f8f9fa; display: flex; flex-direction: column; justify-content: center;
+}
+.col-resize-bar .col-handle strong { color: #0d6efd; font-size: 11px; }
+.col-resize-bar .col-divider {
+  width: 6px; flex: 0 0 6px; cursor: col-resize; background: #0d6efd; border-radius: 3px;
+  opacity: 0.45; transition: opacity 0.2s;
+}
+.col-resize-bar .col-divider:hover { opacity: 1; background: #0b5ed7; }
+
+/* Preview section - always visible below */
+.preview-section {
+  border: 2px solid #198754; border-radius: 8px; padding: 10px;
+  background: #fff; max-height: 35vh; overflow: auto;
+}
+.preview-section h6 { color: #198754; margin-bottom: 8px; }
+#livePreview { border-collapse: collapse; font-size: 12px; width: max-content; table-layout: fixed; background: #fff; }
+#livePreview td { border: 1px solid #ccc; padding: 3px 6px; overflow: hidden; text-overflow: ellipsis; }
+#livePreview td.pv-header { background: #d0e4ff; font-weight: bold; text-align: center; }
+#livePreview td.pv-result { background: #e8f5e9; color: #2e7d32; font-style: italic; }
+#livePreview td.pv-fixed { background: #fff8e1; }
+#livePreview td.pv-units { background: #f3e5f5; }
+
+/* Toolbar */
+.toolbar-section {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 10px; background: #fff; border-radius: 6px; border: 1px solid #dee2e6;
+}
+.toolbar-section .section-label { font-size: 10px; font-weight: 700; color: #6c757d; text-transform: uppercase; padding-right: 2px; }
+.toolbar-section .dimension-label { color: #495057; font-size: 11px; font-weight: 600; margin-left: 2px; }
+.toolbar-section .form-control { text-align: center; }
+
+/* Selection & misc */
+.selection-count { display: inline-block; background: #0d6efd; color: #fff; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
+.legend-item { display: inline-flex; align-items: center; gap: 4px; margin-right: 10px; font-size: 11px; }
+.legend-color { width: 14px; height: 14px; border: 1px solid #999; border-radius: 3px; }
+
+/* Help banner */
+.help-banner {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white; padding: 8px 14px; border-radius: 8px; font-size: 12px;
+  display: flex; align-items: center; gap: 10px;
+}
+.help-banner i { font-size: 18px; }
+
+/* Context menu */
+.context-menu {
+  position: fixed; background: white; border: 1px solid #ccc; border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 6px 0; z-index: 9999; min-width: 180px;
+}
+.context-menu .ctx-item { padding: 5px 14px; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 8px; }
+.context-menu .ctx-item:hover { background: #e9ecef; }
+.context-menu .ctx-divider { border-top: 1px solid #eee; margin: 4px 0; }
+
+/* Width input in props */
+.width-control { display: flex; align-items: center; gap: 4px; }
+.width-control input { width: 50px; }
+.width-control button { padding: 2px 6px; font-size: 11px; }
+
+@media (max-width: 991px) {
+  .designer-top { flex-direction: column; }
+  .designer-props { width: 100%; min-width: 0; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-2">
+  <h5 class="mb-0">
+    <i class="bi bi-grid-3x3 me-2 text-primary"></i>Diseñador
+    <span class="text-muted fs-6 ms-2">{{ exam.name }} ({{ exam.code }})</span>
+  </h5>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('exams.exam_detail', exam_id=exam.id) }}" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-arrow-left me-1"></i>Volver
+    </a>
+    <button class="btn btn-sm btn-success" id="saveBtn">
+      <i class="bi bi-save me-1"></i>Guardar
+    </button>
+  </div>
+</div>
+
+<!-- Help banner (dismissible) -->
+<div class="help-banner mb-2" id="helpBanner">
+  <i class="bi bi-lightbulb"></i>
+  <div>
+    <b>Clic</b> = seleccionar | <b>Arrastrar</b> = seleccionar varias | <b>Clic derecho</b> = menú rápido | <b>Doble clic</b> = editar texto | Arrastre los <span style="color:#90caf9">divisores azules</span> entre columnas para ajustar ancho
+    <a href="#" class="text-white ms-2" id="dismissHelp" style="font-size:11px">[Ocultar]</a>
+  </div>
+</div>
+
+<!-- Toolbar compact -->
+<div class="d-flex flex-wrap gap-2 mb-2" style="font-size:12px">
+  <div class="toolbar-section">
+    <span class="section-label">Grilla</span>
+    <label class="dimension-label" for="gridRows">Filas</label>
+    <input type="number" id="gridRows" class="form-control form-control-sm" style="width:52px" value="10" min="1" max="50">
+    <label class="dimension-label" for="gridCols">Columnas</label>
+    <input type="number" id="gridCols" class="form-control form-control-sm" style="width:52px" value="6" min="1" max="20">
+    <button class="btn btn-sm btn-outline-primary" id="resizeBtn" title="Aplicar tamaño"><i class="bi bi-check-lg"></i></button>
+    <button class="btn btn-sm btn-outline-secondary" id="addRowBtn" title="Agregar fila"><i class="bi bi-plus-lg"></i><span class="ms-1">Fila</span></button>
+    <button class="btn btn-sm btn-outline-secondary" id="addColBtn" title="Agregar columna"><i class="bi bi-plus-lg"></i><span class="ms-1">Col.</span></button>
+  </div>
+  <div class="toolbar-section">
+    <span class="section-label">Celdas</span>
+    <button class="btn btn-sm btn-warning py-0" id="mergeBtn" title="Combinar seleccionadas"><i class="bi bi-union me-1"></i>Combinar</button>
+    <button class="btn btn-sm btn-outline-danger py-0" id="unmergeBtn" title="Separar"><i class="bi bi-subtract me-1"></i>Separar</button>
+  </div>
+  <div class="toolbar-section">
+    <span class="section-label">Tipo</span>
+    <button class="btn btn-sm btn-outline-secondary py-0 cell-type-btn" data-type="label">📝Etiq</button>
+    <button class="btn btn-sm btn-outline-primary py-0 cell-type-btn" data-type="header">📌Enc</button>
+    <button class="btn btn-sm btn-outline-success py-0 cell-type-btn" data-type="result">✏️Res</button>
+    <button class="btn btn-sm btn-outline-warning py-0 cell-type-btn" data-type="fixed">🔒Fijo</button>
+    <button class="btn btn-sm btn-outline-info py-0 cell-type-btn" data-type="units">📐Ud</button>
+  </div>
+  <div class="toolbar-section">
+    <span class="section-label">Formato</span>
+    <button class="btn btn-sm btn-outline-dark py-0" id="boldBtn" title="Negrita"><i class="bi bi-type-bold"></i></button>
+    <button class="btn btn-sm btn-outline-dark py-0 align-btn" data-align="left"><i class="bi bi-text-left"></i></button>
+    <button class="btn btn-sm btn-outline-dark py-0 align-btn" data-align="center"><i class="bi bi-text-center"></i></button>
+    <button class="btn btn-sm btn-outline-dark py-0 align-btn" data-align="right"><i class="bi bi-text-right"></i></button>
+  </div>
+</div>
+
+<!-- TOP: Grid + Properties side by side -->
+<div class="designer-top">
+  <!-- Grid area -->
+  <div style="flex:1; min-width:0;">
+    <!-- Column width handles -->
+    <div class="col-resize-bar" id="colResizeBar"></div>
+    <!-- Grid -->
+    <div class="designer-grid-wrap">
+      <table id="designerGrid">
+        <colgroup id="colGroup"></colgroup>
+        <tbody id="gridBody"></tbody>
+      </table>
+    </div>
+    <!-- Selection info + legend -->
+    <div class="d-flex justify-content-between align-items-center mt-1 px-1">
+      <div>
+        <span id="selectionInfo" class="text-muted" style="font-size:11px">Haga clic en una celda</span>
+        <span id="selectionCount" class="selection-count d-none ms-2">0</span>
+      </div>
+      <div>
+        <span class="legend-item"><span class="legend-color" style="background:#f8f9fa"></span>Etiqueta</span>
+        <span class="legend-item"><span class="legend-color" style="background:#d0e4ff"></span>Encabezado</span>
+        <span class="legend-item"><span class="legend-color" style="background:#d1e7dd;border-style:dashed"></span>Resultado</span>
+        <span class="legend-item"><span class="legend-color" style="background:#fff3cd"></span>Fijo</span>
+        <span class="legend-item"><span class="legend-color" style="background:#e8daef"></span>Unidades</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Properties panel (compact) -->
+  <div class="designer-props">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-primary text-white py-1 small fw-bold">
+        <i class="bi bi-pencil-square me-1"></i>Propiedades
+        <span id="cellCoord" class="ms-1 badge bg-light text-dark" style="font-size:10px"></span>
+      </div>
+      <div class="card-body p-2" style="font-size:12px">
+        <div class="mb-2">
+          <label class="form-label mb-0 fw-bold" style="font-size:11px">Texto</label>
+          <input type="text" id="cellContent" class="form-control form-control-sm" placeholder="Contenido...">
+        </div>
+        <div class="mb-2">
+          <label class="form-label mb-0 fw-bold" style="font-size:11px">Parámetro</label>
+          <select id="cellParam" class="form-select form-select-sm">
+            <option value="">– ninguno –</option>
+            {% for p in params %}
+            <option value="{{ p.id }}">{{ p.name }}{% if p.default_units %} ({{ p.default_units }}){% endif %}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="mb-2">
+          <label class="form-label mb-0 fw-bold" style="font-size:11px">Tipo</label>
+          <select id="cellType" class="form-select form-select-sm">
+            <option value="label">📝 Etiqueta</option>
+            <option value="header">📌 Encabezado</option>
+            <option value="result">✏️ Resultado</option>
+            <option value="fixed">🔒 Fijo</option>
+            <option value="units">📐 Unidades</option>
+            <option value="blank">⬜ Vacío</option>
+          </select>
+        </div>
+        <div class="mb-2">
+          <label class="form-label mb-0 fw-bold" style="font-size:11px">Ancho de columna</label>
+          <div class="width-control">
+            <button class="btn btn-outline-secondary btn-sm" id="colNarrower" title="Más angosta (−10px)">−</button>
+            <input type="number" id="colWidth" class="form-control form-control-sm" value="100" min="20" max="500" step="10">
+            <button class="btn btn-outline-secondary btn-sm" id="colWider" title="Más ancha (+10px)">+</button>
+            <span class="text-muted" style="font-size:10px">px</span>
+          </div>
+          <div class="form-text" style="font-size:10px">Aplica a todas las columnas de la selección (incluso combinadas)</div>
+        </div>
+        <button class="btn btn-primary btn-sm w-100 mt-1" id="applyCellBtn">
+          <i class="bi bi-check2 me-1"></i>Aplicar
+        </button>
+        <!-- Tips inline -->
+        <div class="mt-2 p-2 bg-light rounded" style="font-size:11px">
+          <b>Tips:</b> Arrastre para seleccionar → Combinar. Clic derecho = menú. Doble clic = editar texto.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM: Live Preview always visible -->
+<div class="preview-section mt-2">
+  <h6 class="mb-1"><i class="bi bi-eye me-1"></i>Vista previa (así se verá el resultado impreso)</h6>
+  <table id="livePreview">
+    <colgroup id="previewColGroup"></colgroup>
+    <tbody id="previewBody"></tbody>
+  </table>
+</div>
+
+<!-- Context menu -->
+<div class="context-menu d-none" id="contextMenu">
+  <div class="ctx-item" data-action="merge"><i class="bi bi-union text-warning"></i> Combinar celdas</div>
+  <div class="ctx-item" data-action="unmerge"><i class="bi bi-subtract text-danger"></i> Separar celda</div>
+  <div class="ctx-divider"></div>
+  <div class="ctx-item" data-action="type-header"><i class="bi bi-card-heading text-primary"></i> Encabezado</div>
+  <div class="ctx-item" data-action="type-result"><i class="bi bi-input-cursor-text text-success"></i> Resultado</div>
+  <div class="ctx-item" data-action="type-label"><i class="bi bi-tag text-secondary"></i> Etiqueta</div>
+  <div class="ctx-item" data-action="type-fixed"><i class="bi bi-lock text-warning"></i> Fijo</div>
+  <div class="ctx-item" data-action="type-units"><i class="bi bi-rulers text-info"></i> Unidades</div>
+  <div class="ctx-divider"></div>
+  <div class="ctx-item" data-action="col-wider"><i class="bi bi-arrows-expand text-primary"></i> Columna más ancha</div>
+  <div class="ctx-item" data-action="col-narrower"><i class="bi bi-arrows-collapse text-primary"></i> Columna más angosta</div>
+  <div class="ctx-divider"></div>
+  <div class="ctx-item" data-action="bold"><i class="bi bi-type-bold"></i> Negrita</div>
+  <div class="ctx-item" data-action="clear"><i class="bi bi-eraser text-danger"></i> Limpiar celda</div>
+</div>
+
+<script>
+// ========================================================================
+// State
+// ========================================================================
+const savedLayout = {{ layout_settings_json|safe }};
+const hasSavedGridSize = Number.isInteger(savedLayout.rows) && Number.isInteger(savedLayout.cols);
+let ROWS = hasSavedGridSize ? savedLayout.rows : 0;
+let COLS = hasSavedGridSize ? savedLayout.cols : 0;
+let cells = {};
+let colWidths = []; // width per column in px
+let selectedCells = new Set();
+let isDragging = false;
+let dragStart = null;
+const DEFAULT_COL_WIDTH = 100;
+
+// Load from server
+const serverCells = {{ cells_json|safe }};
+serverCells.forEach(c => {
+  if (hasSavedGridSize && (c.row >= ROWS || c.col >= COLS)) return;
+  const key = `${c.row}_${c.col}`;
+  cells[key] = c;
+  if (!hasSavedGridSize) {
+    ROWS = Math.max(ROWS, c.row + (c.rowspan||1));
+    COLS = Math.max(COLS, c.col + (c.colspan||1));
+  }
+});
+if (!ROWS) ROWS = 10;
+if (!COLS) COLS = 6;
+
+// Initialize column widths
+function initColWidths() {
+  const saved = localStorage.getItem('colWidths_{{ exam.id }}');
+  if (Array.isArray(savedLayout.colWidths) && savedLayout.colWidths.length) {
+    colWidths = [...savedLayout.colWidths];
+  } else if (saved) {
+    colWidths = JSON.parse(saved);
+  } else {
+    colWidths = Array(COLS).fill(DEFAULT_COL_WIDTH);
+  }
+  while (colWidths.length < COLS) colWidths.push(DEFAULT_COL_WIDTH);
+}
+function saveColWidths() {
+  localStorage.setItem('colWidths_{{ exam.id }}', JSON.stringify(colWidths));
+}
+
+// ========================================================================
+// Column resize bar
+// ========================================================================
+function buildColResizeBar() {
+  const bar = document.getElementById('colResizeBar');
+  bar.innerHTML = '';
+  for (let c = 0; c < COLS; c++) {
+    // Divider before each column (for resizing the left side / previous col)
+    if (c > 0) {
+      const divider = document.createElement('div');
+      divider.className = 'col-divider';
+      divider.title = `Arrastre para ajustar ancho de Col ${c}`;
+      divider.dataset.col = c - 1;
+      divider.addEventListener('mousedown', startColResize);
+      bar.appendChild(divider);
+    }
+
+    const handle = document.createElement('div');
+    handle.className = 'col-handle';
+    handle.innerHTML = `<span>Columna ${c+1}</span><strong>${colWidths[c]} px</strong>`;
+    handle.title = `Col ${c+1}: ${colWidths[c]}px — doble clic para escribir el valor`;
+    handle.style.width = colWidths[c] + 'px';
+    handle.addEventListener('dblclick', () => {
+      const val = prompt(`Ancho de columna ${c+1} (px, mínimo 20):`, colWidths[c]);
+      if (val && !isNaN(val) && parseInt(val) >= 20) {
+        colWidths[c] = parseInt(val);
+        saveColWidths();
+        buildAll();
+      }
+    });
+    bar.appendChild(handle);
+  }
+  // Divider AFTER the last column too
+  const lastDiv = document.createElement('div');
+  lastDiv.className = 'col-divider';
+  lastDiv.title = `Arrastre para ajustar ancho de Col ${COLS}`;
+  lastDiv.dataset.col = COLS - 1;
+  lastDiv.addEventListener('mousedown', startColResize);
+  bar.appendChild(lastDiv);
+}
+
+let resizingCol = -1;
+let resizeStartX = 0;
+let resizeStartWidth = 0;
+
+function startColResize(e) {
+  resizingCol = parseInt(e.target.dataset.col);
+  resizeStartX = e.clientX;
+  resizeStartWidth = colWidths[resizingCol];
+  document.addEventListener('mousemove', doColResize);
+  document.addEventListener('mouseup', stopColResize);
+  e.preventDefault();
+}
+
+function doColResize(e) {
+  if (resizingCol < 0) return;
+  const diff = e.clientX - resizeStartX;
+  colWidths[resizingCol] = Math.max(20, resizeStartWidth + diff);
+  applyColWidths();
+  buildColResizeBar();
+}
+
+function stopColResize() {
+  resizingCol = -1;
+  document.removeEventListener('mousemove', doColResize);
+  document.removeEventListener('mouseup', stopColResize);
+  saveColWidths();
+  updateLivePreview();
+}
+
+function applyColWidths() {
+  const colGroup = document.getElementById('colGroup');
+  colGroup.innerHTML = '';
+  for (let c = 0; c < COLS; c++) {
+    const col = document.createElement('col');
+    col.style.width = colWidths[c] + 'px';
+    colGroup.appendChild(col);
+  }
+}
+
+// ========================================================================
+// Grid rendering
+// ========================================================================
+function buildGrid() {
+  const tbody = document.getElementById('gridBody');
+  tbody.innerHTML = '';
+  applyColWidths();
+  const covered = new Set();
+
+  Object.values(cells).forEach(c => {
+    for (let r = c.row; r < c.row + (c.rowspan||1); r++) {
+      for (let cc = c.col; cc < c.col + (c.colspan||1); cc++) {
+        if (!(r === c.row && cc === c.col)) covered.add(`${r}_${cc}`);
+      }
+    }
+  });
+
+  for (let r = 0; r < ROWS; r++) {
+    const tr = document.createElement('tr');
+    for (let c = 0; c < COLS; c++) {
+      const key = `${r}_${c}`;
+      if (covered.has(key)) continue;
+      const cell = cells[key] || {row:r, col:c, rowspan:1, colspan:1, cell_type:'label', content:'', parameter_id:null, style:{}};
+      if (!cells[key]) cells[key] = cell;
+
+      const td = document.createElement('td');
+      td.dataset.key = key;
+      td.rowSpan = cell.rowspan || 1;
+      td.colSpan = cell.colspan || 1;
+      td.classList.add(`cell-${cell.cell_type}`);
+      if (selectedCells.has(key)) td.classList.add('selected');
+      if (cell.style?.bold) td.style.fontWeight = 'bold';
+      if (cell.style?.align) td.style.textAlign = cell.style.align;
+
+      let display = cell.content || '';
+      if (cell.cell_type === 'result' && cell.parameter_id) {
+        display = `<span class="text-success fw-bold">[${getParamName(cell.parameter_id)}]</span>`;
+      } else if (cell.cell_type === 'result' && !cell.parameter_id) {
+        display = `<span class="text-success fst-italic">[resultado]</span>`;
+      }
+      if ((cell.rowspan||1) > 1 || (cell.colspan||1) > 1) {
+        display += ` <span class="badge bg-warning text-dark" style="font-size:9px">${cell.rowspan||1}×${cell.colspan||1}</span>`;
+      }
+      td.innerHTML = display;
+      td.title = `(${r+1},${c+1}) ${cell.cell_type}`;
+
+      td.addEventListener('mousedown', e => onMouseDown(e, key));
+      td.addEventListener('mouseenter', e => onMouseEnter(e, key));
+      td.addEventListener('mouseup', () => isDragging = false);
+      td.addEventListener('dblclick', e => onDblClick(e, key));
+      td.addEventListener('contextmenu', e => onContextMenu(e, key));
+      tr.appendChild(td);
+    }
+    tbody.appendChild(tr);
+  }
+  updateSelectionInfo();
+  updateLivePreview();
+}
+
+function getParamName(pid) {
+  const opt = document.querySelector(`#cellParam option[value="${pid}"]`);
+  return opt ? opt.textContent.split(' (')[0] : `P${pid}`;
+}
+
+function buildAll() {
+  buildColResizeBar();
+  buildGrid();
+}
+
+// ========================================================================
+// Selection
+// ========================================================================
+function onMouseDown(e, key) {
+  e.preventDefault();
+  if (e.button === 2) return;
+  if (!e.shiftKey && !e.ctrlKey) selectedCells.clear();
+  selectedCells.add(key);
+  isDragging = true;
+  dragStart = key;
+  buildGrid();
+  updateCellPanel(key);
+}
+
+function onMouseEnter(e, key) {
+  if (!isDragging) return;
+  if (dragStart) {
+    const [r0, c0] = dragStart.split('_').map(Number);
+    const [r1, c1] = key.split('_').map(Number);
+    selectedCells.clear();
+    for (let r = Math.min(r0, r1); r <= Math.max(r0, r1); r++) {
+      for (let c = Math.min(c0, c1); c <= Math.max(c0, c1); c++) {
+        selectedCells.add(`${r}_${c}`);
+      }
+    }
+    buildGrid();
+  }
+}
+
+document.addEventListener('mouseup', () => { isDragging = false; });
+
+function onDblClick(e, key) {
+  const cell = cells[key];
+  if (!cell) return;
+  const v = prompt('Texto de la celda:', cell.content || '');
+  if (v !== null) { cell.content = v; document.getElementById('cellContent').value = v; buildGrid(); }
+}
+
+// ========================================================================
+// Context menu
+// ========================================================================
+function onContextMenu(e, key) {
+  e.preventDefault();
+  if (!selectedCells.has(key)) {
+    selectedCells.clear();
+    selectedCells.add(key);
+    buildGrid();
+    updateCellPanel(key);
+  }
+  const menu = document.getElementById('contextMenu');
+  menu.classList.remove('d-none');
+  menu.style.left = e.clientX + 'px';
+  menu.style.top = e.clientY + 'px';
+}
+
+document.addEventListener('click', e => {
+  const menu = document.getElementById('contextMenu');
+  if (!menu.contains(e.target)) menu.classList.add('d-none');
+});
+
+document.querySelectorAll('#contextMenu .ctx-item').forEach(item => {
+  item.addEventListener('click', () => {
+    const action = item.dataset.action;
+    if (action === 'merge') doMerge();
+    else if (action === 'unmerge') doUnmerge();
+    else if (action.startsWith('type-')) setCellType(action.replace('type-', ''));
+    else if (action === 'col-wider') changeSelectedColWidth(20);
+    else if (action === 'col-narrower') changeSelectedColWidth(-20);
+    else if (action === 'bold') toggleBold();
+    else if (action === 'clear') clearCells();
+    document.getElementById('contextMenu').classList.add('d-none');
+  });
+});
+
+// ========================================================================
+// Selection info
+// ========================================================================
+function updateSelectionInfo() {
+  const count = selectedCells.size;
+  const info = document.getElementById('selectionInfo');
+  const badge = document.getElementById('selectionCount');
+  if (count === 0) {
+    info.textContent = 'Haga clic en una celda';
+    badge.classList.add('d-none');
+  } else if (count === 1) {
+    const key = Array.from(selectedCells)[0];
+    const cell = cells[key];
+    info.textContent = `Fila ${cell.row+1}, Col ${cell.col+1} — ${cell.cell_type}`;
+    badge.classList.add('d-none');
+  } else {
+    info.textContent = `${count} celdas seleccionadas`;
+    badge.textContent = count;
+    badge.classList.remove('d-none');
+  }
+}
+
+// ========================================================================
+// Cell panel
+// ========================================================================
+function updateCellPanel(key) {
+  const cell = cells[key];
+  if (!cell) return;
+  document.getElementById('cellCoord').textContent = `F${cell.row+1} C${cell.col+1}` + ((cell.colspan||1) > 1 || (cell.rowspan||1) > 1 ? ` (${cell.rowspan||1}×${cell.colspan||1})` : '');
+  document.getElementById('cellContent').value = cell.content || '';
+  document.getElementById('cellType').value = cell.cell_type || 'label';
+  document.getElementById('cellParam').value = cell.parameter_id || '';
+  // Show width of first column in selection
+  document.getElementById('colWidth').value = colWidths[cell.col] || DEFAULT_COL_WIDTH;
+}
+
+document.getElementById('applyCellBtn').addEventListener('click', () => {
+  const type = document.getElementById('cellType').value;
+  const content = document.getElementById('cellContent').value;
+  const paramId = document.getElementById('cellParam').value;
+  selectedCells.forEach(key => {
+    if (cells[key]) {
+      cells[key].cell_type = type;
+      cells[key].content = content;
+      cells[key].parameter_id = paramId ? parseInt(paramId) : null;
+    }
+  });
+  buildGrid();
+  showToast('Aplicado ✓', 'success');
+});
+
+document.getElementById('cellContent').addEventListener('keyup', function(e) {
+  if (e.key === 'Enter') {
+    selectedCells.forEach(key => { if (cells[key]) cells[key].content = this.value; });
+    buildGrid();
+  }
+});
+document.getElementById('cellType').addEventListener('change', function() {
+  selectedCells.forEach(key => { if (cells[key]) cells[key].cell_type = this.value; });
+  buildGrid();
+});
+document.getElementById('cellParam').addEventListener('change', function() {
+  const pid = this.value;
+  selectedCells.forEach(key => { if (cells[key]) cells[key].parameter_id = pid ? parseInt(pid) : null; });
+  buildGrid();
+});
+
+// ========================================================================
+// Column width controls
+// ========================================================================
+document.getElementById('colWider').addEventListener('click', () => changeSelectedColWidth(10));
+document.getElementById('colNarrower').addEventListener('click', () => changeSelectedColWidth(-10));
+document.getElementById('colWidth').addEventListener('change', function() {
+  const w = Math.max(20, parseInt(this.value) || DEFAULT_COL_WIDTH);
+  const cols = getSelectedCols();
+  if (cols.size > 0) {
+    cols.forEach(c => { colWidths[c] = w; });
+    saveColWidths(); buildAll();
+  }
+});
+
+function getSelectedCols() {
+  // Get all columns involved in the selection (including spanned columns from merged cells)
+  const cols = new Set();
+  selectedCells.forEach(key => {
+    const [r, c] = key.split('_').map(Number);
+    const cell = cells[key];
+    if (cell && (cell.colspan || 1) > 1) {
+      for (let cc = c; cc < c + cell.colspan; cc++) cols.add(cc);
+    } else {
+      cols.add(c);
+    }
+  });
+  return cols;
+}
+
+function getSelectedCol() {
+  if (selectedCells.size === 0) return -1;
+  const key = Array.from(selectedCells)[0];
+  return parseInt(key.split('_')[1]);
+}
+
+function changeSelectedColWidth(delta) {
+  const cols = getSelectedCols();
+  if (cols.size === 0) { showToast('Seleccione una celda primero', 'warning'); return; }
+  cols.forEach(c => { colWidths[c] = Math.max(20, (colWidths[c] || DEFAULT_COL_WIDTH) + delta); });
+  document.getElementById('colWidth').value = colWidths[Array.from(cols)[0]];
+  saveColWidths();
+  buildAll();
+}
+
+// ========================================================================
+// Toolbar buttons
+// ========================================================================
+document.querySelectorAll('.cell-type-btn').forEach(btn => {
+  btn.addEventListener('click', () => setCellType(btn.dataset.type));
+});
+
+function setCellType(type) {
+  if (selectedCells.size === 0) { showToast('Seleccione una celda primero', 'warning'); return; }
+  selectedCells.forEach(key => { if (cells[key]) cells[key].cell_type = type; });
+  document.getElementById('cellType').value = type;
+  buildGrid();
+}
+
+document.getElementById('mergeBtn').addEventListener('click', doMerge);
+document.getElementById('unmergeBtn').addEventListener('click', doUnmerge);
+
+function doMerge() {
+  if (selectedCells.size < 2) { showToast('Arrastre sobre 2 o más celdas para combinar', 'warning'); return; }
+  const keys = Array.from(selectedCells);
+  const rows = keys.map(k => parseInt(k.split('_')[0]));
+  const cols = keys.map(k => parseInt(k.split('_')[1]));
+  const minR = Math.min(...rows), maxR = Math.max(...rows);
+  const minC = Math.min(...cols), maxC = Math.max(...cols);
+  const originKey = `${minR}_${minC}`;
+  keys.forEach(k => { if (cells[k]) { cells[k].rowspan = 1; cells[k].colspan = 1; } });
+  if (!cells[originKey]) cells[originKey] = {row:minR, col:minC, rowspan:1, colspan:1, cell_type:'label', content:'', parameter_id:null, style:{}};
+  cells[originKey].rowspan = maxR - minR + 1;
+  cells[originKey].colspan = maxC - minC + 1;
+  keys.forEach(k => { if (k !== originKey && cells[k]) { if (!cells[originKey].content && cells[k].content) cells[originKey].content = cells[k].content; delete cells[k]; } });
+  selectedCells.clear(); selectedCells.add(originKey);
+  buildGrid(); updateCellPanel(originKey);
+  showToast(`Combinado: ${cells[originKey].rowspan}×${cells[originKey].colspan}`, 'success');
+}
+
+function doUnmerge() {
+  selectedCells.forEach(key => { if (cells[key]) { cells[key].rowspan = 1; cells[key].colspan = 1; } });
+  buildGrid();
+  showToast('Separado', 'info');
+}
+
+function fitCellsToGrid() {
+  Object.entries(cells).forEach(([key, cell]) => {
+    if (cell.row >= ROWS || cell.col >= COLS) {
+      delete cells[key];
+      selectedCells.delete(key);
+      return;
+    }
+    cell.rowspan = Math.min(cell.rowspan || 1, ROWS - cell.row);
+    cell.colspan = Math.min(cell.colspan || 1, COLS - cell.col);
+  });
+}
+
+// ========================================================================
+// Style buttons
+// ========================================================================
+document.getElementById('boldBtn').addEventListener('click', toggleBold);
+function toggleBold() {
+  selectedCells.forEach(key => { if (!cells[key]) return; if (!cells[key].style) cells[key].style = {}; cells[key].style.bold = !cells[key].style.bold; });
+  buildGrid();
+}
+document.querySelectorAll('.align-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const align = btn.dataset.align;
+    selectedCells.forEach(key => { if (!cells[key]) return; if (!cells[key].style) cells[key].style = {}; cells[key].style.align = align; });
+    buildGrid();
+  });
+});
+function clearCells() {
+  selectedCells.forEach(key => { if (cells[key]) { cells[key].content=''; cells[key].parameter_id=null; cells[key].cell_type='label'; cells[key].style={}; } });
+  buildGrid();
+}
+
+// ========================================================================
+// Grid resize
+// ========================================================================
+function resizeGridFromInputs() {
+  ROWS = parseInt(document.getElementById('gridRows').value) || 10;
+  COLS = parseInt(document.getElementById('gridCols').value) || 6;
+  fitCellsToGrid();
+  while (colWidths.length < COLS) colWidths.push(DEFAULT_COL_WIDTH);
+  colWidths = colWidths.slice(0, COLS);
+  saveColWidths(); buildAll();
+}
+
+document.getElementById('resizeBtn').addEventListener('click', resizeGridFromInputs);
+document.getElementById('gridRows').addEventListener('change', resizeGridFromInputs);
+document.getElementById('gridCols').addEventListener('change', resizeGridFromInputs);
+document.getElementById('addRowBtn').addEventListener('click', () => { ROWS++; document.getElementById('gridRows').value = ROWS; buildGrid(); });
+document.getElementById('addColBtn').addEventListener('click', () => { COLS++; colWidths.push(DEFAULT_COL_WIDTH); document.getElementById('gridCols').value = COLS; saveColWidths(); buildAll(); });
+
+// ========================================================================
+// Live Preview (below grid, respects column widths)
+// ========================================================================
+function updateLivePreview() {
+  // Colgroup
+  const pvColGroup = document.getElementById('previewColGroup');
+  pvColGroup.innerHTML = '';
+  for (let c = 0; c < COLS; c++) {
+    const col = document.createElement('col');
+    col.style.width = colWidths[c] + 'px';
+    pvColGroup.appendChild(col);
+  }
+
+  const tbody = document.getElementById('previewBody');
+  tbody.innerHTML = '';
+  const covered = new Set();
+  Object.values(cells).forEach(c => {
+    for (let r = c.row; r < c.row + (c.rowspan||1); r++) {
+      for (let cc = c.col; cc < c.col + (c.colspan||1); cc++) {
+        if (!(r === c.row && cc === c.col)) covered.add(`${r}_${cc}`);
+      }
+    }
+  });
+
+  let hasAnyContent = false;
+  for (let r = 0; r < ROWS; r++) {
+    const tr = document.createElement('tr');
+    let rowHasContent = false;
+    for (let c = 0; c < COLS; c++) {
+      const key = `${r}_${c}`;
+      if (covered.has(key)) continue;
+      const cell = cells[key];
+      const td = document.createElement('td');
+      if (!cell) { tr.appendChild(td); continue; }
+      td.rowSpan = cell.rowspan || 1;
+      td.colSpan = cell.colspan || 1;
+      td.classList.add(`pv-${cell.cell_type}`);
+      if (cell.style?.bold) td.style.fontWeight = 'bold';
+      if (cell.style?.align) td.style.textAlign = cell.style.align;
+      if (cell.cell_type === 'result') {
+        td.textContent = cell.parameter_id ? getParamName(cell.parameter_id) : '____';
+      } else {
+        td.textContent = cell.content || '';
+      }
+      if (cell.content || cell.parameter_id || cell.cell_type !== 'label') rowHasContent = true;
+      tr.appendChild(td);
+    }
+    if (rowHasContent) hasAnyContent = true;
+    if (rowHasContent || (!hasAnyContent && r < 3)) tbody.appendChild(tr);
+  }
+}
+
+// ========================================================================
+// Save
+// ========================================================================
+document.getElementById('saveBtn').addEventListener('click', () => {
+  const payload = Object.values(cells).filter(c => c && (c.content || c.parameter_id || c.cell_type !== 'label' || (c.rowspan||1) > 1 || (c.colspan||1) > 1));
+  const meta = {row:-1, col:-1, rowspan:1, colspan:1, cell_type:'meta', content: JSON.stringify({rows: ROWS, cols: COLS, colWidths}), parameter_id:null, style:{}};
+  fetch('{{ url_for("designer.save_layout", exam_id=exam.id) }}', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify([meta, ...payload]),
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.ok) showToast('✅ Plantilla guardada', 'success');
+    else showToast('❌ Error: ' + data.error, 'danger');
+  })
+  .catch(() => showToast('❌ Error de conexión', 'danger'));
+});
+
+// ========================================================================
+// Utilities
+// ========================================================================
+function showToast(msg, type) {
+  const div = document.createElement('div');
+  div.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+  div.style.cssText = 'top:12px;right:12px;z-index:9999;min-width:220px;box-shadow:0 4px 12px rgba(0,0,0,0.15);font-size:13px';
+  div.innerHTML = msg + '<button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>';
+  document.body.appendChild(div);
+  setTimeout(() => div.remove(), 3000);
+}
+
+document.getElementById('dismissHelp').addEventListener('click', e => {
+  e.preventDefault();
+  document.getElementById('helpBanner').style.display = 'none';
+  localStorage.setItem('designerHelpDismissed', '1');
+});
+if (localStorage.getItem('designerHelpDismissed')) document.getElementById('helpBanner').style.display = 'none';
+
+// ========================================================================
+// Init
+// ========================================================================
+initColWidths();
+document.getElementById('gridRows').value = ROWS;
+document.getElementById('gridCols').value = COLS;
+buildAll();
+</script>
+{% endblock %}

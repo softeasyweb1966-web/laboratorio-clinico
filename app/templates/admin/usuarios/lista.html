@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block title %}Usuarios{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+  <h4><i class="bi bi-people me-2 text-primary"></i>Usuarios del Sistema</h4>
+  <a href="{{ url_for('admin.usuario_nuevo') }}" class="btn btn-primary btn-sm">
+    <i class="bi bi-plus-lg me-1"></i>Nuevo Usuario
+  </a>
+</div>
+<div class="card">
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>
+          <th>Usuario</th><th>Nombre</th><th>Correo</th>
+          <th>Rol</th><th>Último Acceso</th><th>Estado</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in usuarios %}
+        <tr>
+          <td><strong>{{ u.username }}</strong></td>
+          <td>{{ u.nombre }}</td>
+          <td>{{ u.email }}</td>
+          <td>
+            <span class="badge {% if u.rol == 'admin' %}bg-danger{% elif u.rol == 'supervisor' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+              {{ u.rol }}
+            </span>
+          </td>
+          <td class="text-muted small">
+            {{ u.ultimo_acceso.strftime('%d/%m/%Y %H:%M') if u.ultimo_acceso else '—' }}
+          </td>
+          <td>
+            <span class="badge {{ 'badge-activo' if u.activo else 'badge-inactivo' }}">
+              {{ 'Activo' if u.activo else 'Inactivo' }}
+            </span>
+          </td>
+          <td>
+            <div class="d-flex gap-1">
+              <a href="{{ url_for('admin.usuario_editar', id=u.id) }}" class="btn btn-sm btn-outline-primary" title="Editar">
+                <i class="bi bi-pencil"></i>
+              </a>
+              <a href="{{ url_for('admin.usuario_toggle', id=u.id) }}" class="btn btn-sm btn-outline-{{ 'danger' if u.activo else 'success' }}" title="{{ 'Desactivar' if u.activo else 'Activar' }}"
+                 onclick="return confirm('¿Confirma esta acción?')">
+                <i class="bi bi-{{ 'toggle-on' if u.activo else 'toggle-off' }}"></i>
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="text-center text-muted py-4">No hay usuarios registrados.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

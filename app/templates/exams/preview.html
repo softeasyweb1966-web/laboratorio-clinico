@@ -1,0 +1,32 @@
+{% if grid %}
+<table style="border-collapse:collapse;font-size:12px;">
+  <tbody>
+    {% for row in grid %}
+    <tr>
+      {% for cell in row %}
+        {% if cell and not cell.get('empty', False) %}
+        <td rowspan="{{ cell.rowspan }}" colspan="{{ cell.colspan }}"
+            style="border:1px solid #ccc;padding:3px 6px;
+            {% if cell.cell_type == 'header' %}background:#d0e4ff;font-weight:bold;text-align:center;{% endif %}
+            {% if cell.cell_type == 'result' %}background:#d4edda;{% endif %}
+            {% if cell.cell_type == 'fixed' %}background:#fff3cd;{% endif %}
+            {% if cell.style_dict.get('bold') %}font-weight:bold;{% endif %}
+            {% if cell.style_dict.get('align') %}text-align:{{ cell.style_dict.align }};{% endif %}
+            ">
+          {% if cell.cell_type == 'result' and cell.parameter %}
+            [{{ cell.parameter.name }}]
+          {% else %}
+            {{ cell.content or '' }}
+          {% endif %}
+        </td>
+        {% elif cell and cell.get('empty', False) %}
+        <td style="border:1px solid #eee;"></td>
+        {% endif %}
+      {% endfor %}
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<small class="text-muted">Sin celdas definidas.</small>
+{% endif %}

@@ -1,0 +1,40 @@
+# Entornos virtuales
+venv/
+.venv/
+env/
+
+# Variables de entorno
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+
+# IDEs
+.vscode/
+.idea/
+.kiro/
+
+# Bases de datos
+*.db
+*.sqlite
+*.sqlite3
+
+# Carpetas de compilación
+build/
+dist/
+
+# Logs
+*.log
+
+# Archivos temporales
+*.tmp
+
+# Instaladores
+*.zip
+Nuevo Documento de texto.txt
+Nuevo Documento de texto (2).txt
+definicion - copia.txt
+postgress.txt

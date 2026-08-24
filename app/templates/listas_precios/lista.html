@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% block title %}Listas de Precios{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+  <h4><i class="bi bi-tags me-2 text-primary"></i>Listas de Precios / Tarifas</h4>
+  <a href="{{ url_for('listas.nueva') }}" class="btn btn-primary btn-sm">
+    <i class="bi bi-plus-lg me-1"></i>Nueva Lista
+  </a>
+</div>
+
+<!-- Buscador -->
+<div class="card mb-3">
+  <div class="card-body py-2">
+    <form class="row g-2 align-items-center" method="GET">
+      <div class="col-md-5">
+        <input type="search" class="form-control form-control-sm" name="q" value="{{ q }}"
+               placeholder="Buscar por código o nombre...">
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-search me-1"></i>Buscar</button>
+        <a href="{{ url_for('listas.lista') }}" class="btn btn-outline-secondary btn-sm">Limpiar</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Tabla principal -->
+<div class="card">
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Nombre / Descripción</th>
+          <th class="text-center">Servicios</th>
+          <th class="text-center">Clientes vinculados</th>
+          <th class="text-center">Estado</th>
+          <th class="text-center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for lp in listas %}
+        <tr>
+          <td><strong class="text-primary">{{ lp.codigo }}</strong></td>
+          <td>
+            <div class="fw-semibold">{{ lp.nombre }}</div>
+            {% if lp.descripcion %}
+            <small class="text-muted">{{ lp.descripcion }}</small>
+            {% endif %}
+          </td>
+          <td class="text-center">
+            <span class="badge bg-info text-dark">{{ lp.items.count() }}</span>
+          </td>
+          <td class="text-center">
+            {% set nc = lp.clientes.count() %}
+            {% if nc > 0 %}
+              <span class="badge bg-success">{{ nc }}</span>
+            {% else %}
+              <span class="badge bg-light text-muted border">0</span>
+            {% endif %}
+          </td>
+          <td class="text-center">
+            <span class="badge {{ 'badge-activo' if lp.estado else 'badge-inactivo' }}">
+              {{ 'Activa' if lp.estado else 'Inactiva' }}
+            </span>
+          </td>
+          <td class="text-center">
+            <div class="d-flex gap-1 justify-content-center">
+              <a href="{{ url_for('listas.editar_items', id=lp.id) }}"
+                 class="btn btn-sm btn-outline-primary" title="Ver / editar servicios">
+                <i class="bi bi-list-ul"></i>
+              </a>
+              <a href="{{ url_for('listas.editar', id=lp.id) }}"
+                 class="btn btn-sm btn-outline-secondary" title="Editar datos">
+                <i class="bi bi-pencil"></i>
+              </a>
+              <a href="{{ url_for('listas.toggle', id=lp.id) }}"
+                 class="btn btn-sm btn-outline-{{ 'danger' if lp.estado else 'success' }}"
+                 title="{{ 'Desactivar' if lp.estado else 'Activar' }}"
+                 onclick="return confirm('¿Confirmar?')">
+                <i class="bi bi-{{ 'toggle-on' if lp.estado else 'toggle-off' }}"></i>
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" class="text-center text-muted py-4">
+            <i class="bi bi-inbox fs-3 d-block mb-2 opacity-25"></i>
+            No hay listas de precios registradas.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if listas %}
+  <div class="card-footer text-muted small">
+    {{ listas|length }} lista(s) encontrada(s)
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

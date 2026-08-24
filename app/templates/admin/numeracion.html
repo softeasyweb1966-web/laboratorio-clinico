@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% block title %}Numeración Inicial{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+  <h4><i class="bi bi-123 me-2 text-primary"></i>Numeración Inicial</h4>
+  <button class="btn btn-primary btn-sm" onclick="nuevo()"><i class="bi bi-plus-lg me-1"></i>Nuevo Año</button>
+</div>
+<div class="card">
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>
+          <th>Año</th>
+          <th>Pref. Atención</th><th>Consec. Inicial</th>
+          <th>Pref. Prefactura</th><th>Consec. Inicial</th>
+          <th>Pref. Recibo</th><th>Consec. Inicial</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for n in numeraciones %}
+        <tr>
+          <td><strong>{{ n.anio }}</strong></td>
+          <td>{{ n.prefijo_atencion }}</td><td>{{ n.consecutivo_atencion }}</td>
+          <td>{{ n.prefijo_prefactura }}</td><td>{{ n.consecutivo_prefactura }}</td>
+          <td>{{ n.prefijo_recibo }}</td><td>{{ n.consecutivo_recibo }}</td>
+          <td><button class="btn btn-sm btn-outline-primary"
+            onclick='editar({{ n.id }}, {{ n.anio }}, "{{ n.prefijo_atencion }}", {{ n.consecutivo_atencion }}, "{{ n.prefijo_prefactura }}", {{ n.consecutivo_prefactura }}, "{{ n.prefijo_recibo }}", {{ n.consecutivo_recibo }})'>
+            <i class="bi bi-pencil"></i></button></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8" class="text-center text-muted py-4">Sin datos de numeración.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal fade" id="modal" tabindex="-1">
+  <div class="modal-dialog modal-lg"><div class="modal-content">
+    <form method="POST" action="{{ url_for('admin.numeracion_guardar') }}" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="id" id="fId">
+      <div class="modal-header"><h5 class="modal-title">Numeración Inicial</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="row g-3">
+          <div class="col-md-3">
+            <label class="form-label">Año <span class="text-danger">*</span></label>
+            <input type="number" class="form-control" name="anio" id="fAnio" min="2020" max="2099" required>
+          </div>
+          <div class="col-12"><hr class="my-1"><h6 class="text-muted">Atenciones / Consecutivos</h6></div>
+          <div class="col-md-4">
+            <label class="form-label">Prefijo</label>
+            <input type="text" class="form-control" name="prefijo_atencion" id="fPrefAten" maxlength="10">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Consecutivo Inicial</label>
+            <input type="number" class="form-control" name="consecutivo_atencion" id="fConsAten" min="1" value="1">
+          </div>
+          <div class="col-12"><hr class="my-1"><h6 class="text-muted">Prefacturas</h6></div>
+          <div class="col-md-4">
+            <label class="form-label">Prefijo</label>
+            <input type="text" class="form-control" name="prefijo_prefactura" id="fPrefPF" maxlength="10" value="PF">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Consecutivo Inicial</label>
+            <input type="number" class="form-control" name="consecutivo_prefactura" id="fConsPF" min="1" value="1">
+          </div>
+          <div class="col-12"><hr class="my-1"><h6 class="text-muted">Recibos de Caja</h6></div>
+          <div class="col-md-4">
+            <label class="form-label">Prefijo</label>
+            <input type="text" class="form-control" name="prefijo_recibo" id="fPrefRC" maxlength="10" value="RC">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Consecutivo Inicial</label>
+            <input type="number" class="form-control" name="consecutivo_recibo" id="fConsRC" min="1" value="1">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div></div>
+</div>
+<script>
+function nuevo(){
+  document.getElementById('fId').value=''; document.getElementById('fAnio').value='';
+  document.getElementById('fPrefAten').value=''; document.getElementById('fConsAten').value=1;
+  document.getElementById('fPrefPF').value='PF'; document.getElementById('fConsPF').value=1;
+  document.getElementById('fPrefRC').value='RC'; document.getElementById('fConsRC').value=1;
+  new bootstrap.Modal(document.getElementById('modal')).show();
+}
+function editar(id, anio, prefAten, consAten, prefPF, consPF, prefRC, consRC){
+  document.getElementById('fId').value=id;
+  document.getElementById('fAnio').value=anio;
+  document.getElementById('fPrefAten').value=prefAten;
+  document.getElementById('fConsAten').value=consAten;
+  document.getElementById('fPrefPF').value=prefPF;
+  document.getElementById('fConsPF').value=consPF;
+  document.getElementById('fPrefRC').value=prefRC;
+  document.getElementById('fConsRC').value=consRC;
+  new bootstrap.Modal(document.getElementById('modal')).show();
+}
+</script>
+{% endblock %}

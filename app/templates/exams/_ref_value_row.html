@@ -1,0 +1,56 @@
+<div class="row g-2 align-items-center">
+  <div class="col-md-2">
+    <label class="form-label small">Género</label>
+    <select name="rv_gender[]" class="form-select form-select-sm">
+      <option value="" {{ 'selected' if not rv or not rv.gender }}>Todos</option>
+      <option value="M" {{ 'selected' if rv and rv.gender=='M' }}>Masculino</option>
+      <option value="F" {{ 'selected' if rv and rv.gender=='F' }}>Femenino</option>
+    </select>
+  </div>
+  <div class="col-md-2">
+    <label class="form-label small">Edad mín.</label>
+    <input type="number" name="rv_min_age[]" class="form-control form-control-sm" value="{{ rv.min_age if rv and rv.min_age is not none else '' }}" min="0" placeholder="años">
+  </div>
+  <div class="col-md-2">
+    <label class="form-label small">Edad máx.</label>
+    <input type="number" name="rv_max_age[]" class="form-control form-control-sm" value="{{ rv.max_age if rv and rv.max_age is not none else '' }}" min="0" placeholder="años">
+  </div>
+  <div class="col-md-2">
+    <label class="form-label small">Tipo</label>
+    <select name="rv_ref_type[]" class="form-select form-select-sm ref-type-select">
+      <option value="range" {{ 'selected' if not rv or rv.ref_type=='range' }}>Rango</option>
+      <option value="exact" {{ 'selected' if rv and rv.ref_type=='exact' }}>Exacto</option>
+      <option value="text" {{ 'selected' if rv and rv.ref_type=='text' }}>Texto</option>
+    </select>
+  </div>
+  <div class="col-md-3 range-fields" style="{{ 'display:none' if rv and rv.ref_type != 'range' else '' }}">
+    <label class="form-label small">Mín – Máx</label>
+    <div class="input-group input-group-sm">
+      <input type="number" step="any" name="rv_min_value[]" class="form-control" value="{{ rv.min_value if rv and rv.min_value is not none else '' }}" placeholder="Mín">
+      <span class="input-group-text">–</span>
+      <input type="number" step="any" name="rv_max_value[]" class="form-control" value="{{ rv.max_value if rv and rv.max_value is not none else '' }}" placeholder="Máx">
+    </div>
+  </div>
+  <div class="col-md-3 exact-fields" style="{{ '' if rv and rv.ref_type == 'exact' else 'display:none' }}">
+    <label class="form-label small">Valor exacto</label>
+    <input type="number" step="any" name="rv_exact_value[]" class="form-control form-control-sm" value="{{ rv.exact_value if rv and rv.exact_value is not none else '' }}">
+  </div>
+  <div class="col-md-3 text-fields" style="{{ '' if rv and rv.ref_type == 'text' else 'display:none' }}">
+    <label class="form-label small">Descripción</label>
+    <input type="text" name="rv_text_value[]" class="form-control form-control-sm" value="{{ rv.text_value if rv else '' }}">
+  </div>
+  <!-- Hidden placeholders for absent types -->
+  <input type="hidden" name="rv_min_value[]" class="range-fields" style="{{ 'display:none' if not (rv and rv.ref_type == 'range') else '' }}">
+  <input type="hidden" name="rv_max_value[]" class="range-fields" style="{{ 'display:none' if not (rv and rv.ref_type == 'range') else '' }}">
+  <input type="hidden" name="rv_exact_value[]" class="exact-fields" style="{{ 'display:none' if not (rv and rv.ref_type == 'exact') else '' }}">
+  <input type="hidden" name="rv_text_value[]" class="text-fields" style="{{ 'display:none' if not (rv and rv.ref_type == 'text') else '' }}">
+  <div class="col-md-2">
+    <label class="form-label small">Unidades</label>
+    <input type="text" name="rv_units[]" class="form-control form-control-sm" value="{{ rv.units if rv else '' }}" placeholder="mg/dL">
+  </div>
+  <div class="col-auto d-flex align-items-end">
+    <button type="button" class="btn btn-sm btn-outline-danger remove-ref-btn">
+      <i class="bi bi-trash"></i>
+    </button>
+  </div>
+</div>

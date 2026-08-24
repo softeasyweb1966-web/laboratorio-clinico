@@ -1,0 +1,60 @@
+/* ================================================================
+   Módulo de Resultados – Main Stylesheet
+   ================================================================ */
+
+body {
+  font-size: 14px;
+}
+
+/* Navbar */
+.navbar-brand {
+  letter-spacing: 0.5px;
+}
+
+/* Cards */
+.card {
+  border-radius: 8px;
+}
+
+/* Tables */
+.table th {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+/* Small badge helper */
+.btn-xs {
+  padding: 1px 5px;
+  font-size: 11px;
+}
+
+/* Result form */
+.result-input {
+  max-width: 120px;
+  display: inline-block;
+}
+
+.alarm-icon {
+  font-size: 16px;
+}
+
+/* Designer */
+#designerGrid {
+  user-select: none;
+}
+
+/* Preview table */
+#previewPane table {
+  border-collapse: collapse;
+}
+
+/* Utility */
+.overflow-auto {
+  overflow: auto;
+}
+
+/* Print */
+@media print {
+  .navbar, .alert, .btn, nav { display: none !important; }
+  .card { border: none !important; box-shadow: none !important; }
+}

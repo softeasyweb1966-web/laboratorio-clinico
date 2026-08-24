@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Configuración PDF{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4><i class="bi bi-file-pdf me-2"></i>Configuración PDF</h4>
+  <a href="{{ url_for('pdf_config.config_new') }}" class="btn btn-primary btn-sm">
+    <i class="bi bi-plus-circle me-1"></i>Nueva configuración
+  </a>
+</div>
+{% if default_cfg %}
+<div class="alert alert-info small">
+  <i class="bi bi-info-circle me-1"></i>
+  Configuración predeterminada: <strong>{{ default_cfg.name }}</strong>
+</div>
+{% endif %}
+<div class="row g-3">
+  {% for cfg in configs %}
+  <div class="col-md-6">
+    <div class="card shadow-sm {{ 'border-primary' if cfg.is_default else '' }}">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-semibold">{{ cfg.name }}</span>
+        {% if cfg.is_default %}<span class="badge bg-primary">Predeterminada</span>{% endif %}
+      </div>
+      <div class="card-body small">
+        {% if cfg.institution_name %}<div><i class="bi bi-building me-1"></i>{{ cfg.institution_name }}</div>{% endif %}
+        {% if cfg.logo_path %}<div><i class="bi bi-image me-1"></i>Logo: {{ 'Encabezado' if cfg.logo_position != 'footer' else 'Pie de página' }} · {{ {'left': 'Izquierda', 'center': 'Centro', 'right': 'Derecha'}.get(cfg.logo_alignment, 'Izquierda') }}</div>{% endif %}
+        <div><i class="bi bi-file me-1"></i>Página: {{ cfg.page_size }} · Márgenes: {{ cfg.margin_top }}/{{ cfg.margin_bottom }}/{{ cfg.margin_left }}/{{ cfg.margin_right }} mm</div>
+        <div><i class="bi bi-qr-code me-1"></i>QR: {{ 'Sí' if cfg.show_qr else 'No' }}</div>
+      </div>
+      <div class="card-footer d-flex gap-2">
+        <a href="{{ url_for('pdf_config.config_edit', cfg_id=cfg.id) }}" class="btn btn-sm btn-outline-secondary">
+          <i class="bi bi-pencil me-1"></i>Editar
+        </a>
+        {% if not cfg.is_default %}
+        <form method="post" action="{{ url_for('pdf_config.set_default', cfg_id=cfg.id) }}" class="d-inline">
+          <button type="submit" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-star me-1"></i>Predeterminar
+          </button>
+        </form>
+        <form method="post" action="{{ url_for('pdf_config.config_delete', cfg_id=cfg.id) }}" class="d-inline"
+              onsubmit="return confirm('¿Eliminar esta configuración?')">
+          <button type="submit" class="btn btn-sm btn-outline-danger">
+            <i class="bi bi-trash"></i>
+          </button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="col-12">
+    <p class="text-muted">No hay configuraciones PDF. <a href="{{ url_for('pdf_config.config_new') }}">Crear una nueva</a>.</p>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block title %}Estado de Cuenta{% endblock %}
+{% block content %}
+<div class="page-header"><h4><i class="bi bi-wallet2 me-2 text-primary"></i>Estado de Cuenta</h4></div>
+<div class="card mb-3"><div class="card-body py-2">
+  <form class="row g-2 align-items-center" method="GET">
+    <div class="col-md-5">
+      <select class="form-select form-select-sm" name="cliente_id">
+        <option value="">— Seleccione Cliente —</option>
+        {% for c in clientes %}<option value="{{ c.id }}" {{ 'selected' if cliente_id == c.id|string }}>{{ c.nombre }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="col-auto">
+      <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-search me-1"></i>Ver Estado</button>
+    </div>
+  </form>
+</div></div>
+{% if cliente %}
+<div class="card mb-3"><div class="card-header"><strong>{{ cliente.nombre }}</strong> — {{ cliente.nro_identificacion }}</div>
+<div class="card-body p-0">
+  <table class="table table-hover mb-0">
+    <thead><tr><th>Prefactura</th><th>Fecha</th><th class="text-end">Valor</th><th class="text-end">Pagado</th><th class="text-end">Saldo</th><th>Estado</th></tr></thead>
+    <tbody>
+      {% set tot_val = namespace(v=0) %}{% set tot_pag = namespace(v=0) %}{% set tot_sal = namespace(v=0) %}
+      {% for pf in prefacturas %}
+      {% set pagado = pf.recibos | sum(attribute='valor_pagado') %}
+      {% set saldo = pf.valor_total - pagado %}
+      {% set tot_val.v = tot_val.v + pf.valor_total %}
+      {% set tot_pag.v = tot_pag.v + pagado %}
+      {% set tot_sal.v = tot_sal.v + saldo %}
+      <tr>
+        <td><a href="{{ url_for('cartera.prefactura_ver', id=pf.id) }}">{{ pf.nro_prefactura }}</a></td>
+        <td>{{ pf.fecha_generacion.strftime('%d/%m/%Y') }}</td>
+        <td class="text-end">$ {{ '{:,.0f}'.format(pf.valor_total) }}</td>
+        <td class="text-end text-success">$ {{ '{:,.0f}'.format(pagado) }}</td>
+        <td class="text-end {% if saldo > 0 %}text-danger fw-bold{% endif %}">$ {{ '{:,.0f}'.format(saldo) }}</td>
+        <td><span class="badge {% if pf.estado == 'Pendiente' %}bg-warning text-dark{% elif pf.estado == 'Pagada' %}bg-success{% else %}bg-info text-dark{% endif %}">{{ pf.estado }}</span></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" class="text-center text-muted py-3">Sin prefacturas.</td></tr>
+      {% endfor %}
+    </tbody>
+    <tfoot class="fw-bold table-light">
+      <tr>
+        <td colspan="2" class="text-end">TOTALES</td>
+        <td class="text-end">$ {{ '{:,.0f}'.format(tot_val.v) }}</td>
+        <td class="text-end text-success">$ {{ '{:,.0f}'.format(tot_pag.v) }}</td>
+        <td class="text-end text-danger">$ {{ '{:,.0f}'.format(tot_sal.v) }}</td>
+        <td></td>
+      </tr>
+    </tfoot>
+  </table>
+</div></div>
+{% elif cliente_id %}
+<div class="alert alert-info">No se encontró el cliente.</div>
+{% endif %}
+{% endblock %}

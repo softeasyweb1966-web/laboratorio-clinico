@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Resultados{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4><i class="bi bi-list-check me-2"></i>Resultados</h4>
+  <a href="{{ url_for('results.search') }}" class="btn btn-primary btn-sm">
+    <i class="bi bi-plus-circle me-1"></i>Nuevo resultado
+  </a>
+</div>
+<form class="row g-2 mb-3">
+  <div class="col-md-6">
+    <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Buscar por consecutivo o paciente...">
+  </div>
+  <div class="col-auto">
+    <button type="submit" class="btn btn-outline-primary"><i class="bi bi-search"></i></button>
+  </div>
+</form>
+<div class="table-responsive">
+  <table class="table table-striped table-hover align-middle">
+    <thead class="table-dark">
+      <tr>
+        <th>Consecutivo</th><th>Paciente</th><th>Examen</th><th>Bacteriólogo</th>
+        <th>Fecha</th><th>Estado</th><th>Alarmas</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in results %}
+      <tr>
+        <td>{{ r.order.consecutive }}</td>
+        <td>{{ r.order.patient.name }}</td>
+        <td>{{ r.exam.name }}</td>
+        <td>{{ r.bacteriologist.name }}</td>
+        <td>{{ r.date.strftime('%Y-%m-%d') }}</td>
+        <td>
+          {% if r.status == 'final' %}<span class="badge bg-success">Final</span>
+          {% elif r.status == 'approved' %}<span class="badge bg-primary">Aprobado</span>
+          {% else %}<span class="badge bg-warning text-dark">Borrador</span>{% endif %}
+        </td>
+        <td>
+          {% if r.has_alarms %}<i class="bi bi-exclamation-triangle-fill text-danger" title="Valores fuera de rango"></i>{% endif %}
+        </td>
+        <td class="text-end">
+          <a href="{{ url_for('results.result_detail', result_id=r.id) }}" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-eye"></i>
+          </a>
+          <a href="{{ url_for('results.result_pdf', result_id=r.id) }}" class="btn btn-sm btn-outline-danger" target="_blank">
+            <i class="bi bi-file-pdf"></i>
+          </a>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="8" class="text-center text-muted">No se encontraron resultados.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

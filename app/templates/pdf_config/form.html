@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Editar' if cfg else 'Nueva' }} Configuración PDF{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <h4><i class="bi bi-file-pdf me-2"></i>{{ 'Editar' if cfg else 'Nueva' }} Configuración PDF</h4>
+    <hr>
+    <form method="post" enctype="multipart/form-data" class="card p-4 shadow-sm">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Nombre de la configuración *</label>
+          <input type="text" name="name" class="form-control" value="{{ cfg.name if cfg else 'Default' }}" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Logo (imagen)</label>
+          <input type="file" name="logo_file" class="form-control" accept=".png,.jpg,.jpeg,.gif,.svg">
+          {% if cfg and cfg.logo_path %}
+          <small class="text-muted">Logo actual: {{ cfg.logo_path }}</small>
+          {% endif %}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Ubicación del logo</label>
+          <select name="logo_position" class="form-select">
+            <option value="header" {{ 'selected' if not cfg or cfg.logo_position == 'header' }}>Encabezado</option>
+            <option value="footer" {{ 'selected' if cfg and cfg.logo_position == 'footer' }}>Pie de página</option>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Alineación del logo</label>
+          <select name="logo_alignment" class="form-select">
+            <option value="left" {{ 'selected' if not cfg or cfg.logo_alignment == 'left' }}>Izquierda</option>
+            <option value="center" {{ 'selected' if cfg and cfg.logo_alignment == 'center' }}>Centro</option>
+            <option value="right" {{ 'selected' if cfg and cfg.logo_alignment == 'right' }}>Derecha</option>
+          </select>
+        </div>
+        <div class="col-12">
+          <label class="form-label">Nombre de la institución</label>
+          <input type="text" name="institution_name" class="form-control"
+                 value="{{ cfg.institution_name if cfg else '' }}"
+                 placeholder="Hospital / Laboratorio Clínico XYZ">
+        </div>
+        <div class="col-md-8">
+          <label class="form-label">Dirección</label>
+          <input type="text" name="institution_address" class="form-control"
+                 value="{{ cfg.institution_address if cfg else '' }}">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Teléfono</label>
+          <input type="text" name="institution_phone" class="form-control"
+                 value="{{ cfg.institution_phone if cfg else '' }}">
+        </div>
+        <div class="col-12">
+          <label class="form-label">Texto de encabezado (HTML permitido)</label>
+          <textarea name="header_text" class="form-control" rows="2">{{ cfg.header_text if cfg else '' }}</textarea>
+        </div>
+        <div class="col-12">
+          <label class="form-label">Texto de pie de página</label>
+          <textarea name="footer_text" class="form-control" rows="2">{{ cfg.footer_text if cfg else '' }}</textarea>
+        </div>
+        <div class="col-12">
+          <label class="form-label fw-semibold">Datos del paciente en el encabezado</label>
+          <div class="border rounded p-3 bg-light">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <small class="text-muted">Defina filas de hasta cuatro bloques. Cada bloque combina un texto fijo y un dato variable.</small>
+              <button type="button" class="btn btn-sm btn-outline-primary" id="addPatientRow"><i class="bi bi-plus-lg me-1"></i>Agregar fila</button>
+            </div>
+            <div id="patientLayoutEditor"></div>
+          </div>
+          <input type="hidden" name="patient_info_layout" id="patientInfoLayout">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Tamaño de página</label>
+          <select name="page_size" class="form-select">
+            <option value="A4" {{ 'selected' if not cfg or cfg.page_size=='A4' }}>A4</option>
+            <option value="Letter" {{ 'selected' if cfg and cfg.page_size=='Letter' }}>Carta (Letter)</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Numeración de páginas</label>
+          <select name="page_number_style" class="form-select">
+            <option value="none" {{ 'selected' if not cfg or cfg.page_number_style == 'none' }}>No mostrar</option>
+            <option value="simple" {{ 'selected' if cfg and cfg.page_number_style == 'simple' }}>Página 1</option>
+            <option value="total" {{ 'selected' if cfg and cfg.page_number_style == 'total' }}>Página 1 de 3</option>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Márgenes (mm): Superior / Inferior / Izquierdo / Derecho</label>
+          <div class="input-group">
+            <input type="number" name="margin_top" class="form-control" value="{{ cfg.margin_top if cfg else 20 }}" placeholder="Top" step="0.5" min="0">
+            <input type="number" name="margin_bottom" class="form-control" value="{{ cfg.margin_bottom if cfg else 20 }}" placeholder="Bottom" step="0.5" min="0">
+            <input type="number" name="margin_left" class="form-control" value="{{ cfg.margin_left if cfg else 20 }}" placeholder="Left" step="0.5" min="0">
+            <input type="number" name="margin_right" class="form-control" value="{{ cfg.margin_right if cfg else 20 }}" placeholder="Right" step="0.5" min="0">
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="form-check mt-2">
+            <input type="checkbox" class="form-check-input" name="show_qr" id="showQr" {{ 'checked' if not cfg or cfg.show_qr }}>
+            <label class="form-check-label" for="showQr">Mostrar QR</label>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="form-check mt-2">
+            <input type="checkbox" class="form-check-input" name="show_watermark" id="showWatermark" {{ 'checked' if cfg and cfg.show_watermark }}>
+            <label class="form-check-label" for="showWatermark">Marca de agua</label>
+          </div>
+        </div>
+        <div class="col-md-6" id="watermarkRow" style="{{ 'display:none' if not cfg or not cfg.show_watermark else '' }}">
+          <label class="form-label">Texto de marca de agua</label>
+          <input type="text" name="watermark_text" class="form-control"
+                 value="{{ cfg.watermark_text if cfg else '' }}" placeholder="COPIA / BORRADOR ...">
+        </div>
+        <div class="col-12 d-flex gap-2">
+          <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i>Guardar</button>
+          <a href="{{ url_for('pdf_config.list_configs') }}" class="btn btn-secondary">Cancelar</a>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+<script>
+document.getElementById('showWatermark').addEventListener('change', function() {
+  document.getElementById('watermarkRow').style.display = this.checked ? '' : 'none';
+});
+
+const patientFields = {{ patient_info_fields|tojson }};
+let patientLayout = {{ patient_info_layout_json|safe }};
+
+function fieldOptions(selected) {
+  return Object.entries(patientFields).map(([value, label]) =>
+    `<option value="${value}" ${value === selected ? 'selected' : ''}>${label}</option>`
+  ).join('');
+}
+
+function renderPatientLayout() {
+  const editor = document.getElementById('patientLayoutEditor');
+  editor.innerHTML = '';
+  patientLayout.forEach((row, rowIndex) => {
+    const rowEl = document.createElement('div');
+    rowEl.className = 'border rounded bg-white p-2 mb-2';
+    rowEl.innerHTML = `<div class="d-flex justify-content-between align-items-center mb-2"><strong class="small">Fila ${rowIndex + 1}</strong><div><button type="button" class="btn btn-sm btn-outline-secondary add-cell">Agregar bloque</button> <button type="button" class="btn btn-sm btn-outline-danger remove-row"><i class="bi bi-trash"></i></button></div></div><div class="row g-2 cells"></div>`;
+    const cells = rowEl.querySelector('.cells');
+    row.forEach((cell, cellIndex) => {
+      const cellEl = document.createElement('div');
+      cellEl.className = 'col-md-6';
+      cellEl.innerHTML = `<div class="border rounded p-2 h-100"><div class="d-flex justify-content-between mb-2"><small class="fw-semibold">Bloque ${cellIndex + 1}</small><button type="button" class="btn btn-sm btn-link text-danger p-0 remove-cell">Quitar</button></div><label class="form-label small mb-1">Texto fijo</label><input class="form-control form-control-sm cell-label" value="${cell.label || ''}" placeholder="Ej.: Paciente"><label class="form-label small mb-1 mt-2">Dato variable</label><select class="form-select form-select-sm cell-field">${fieldOptions(cell.field)}</select><label class="form-label small mb-1 mt-2">Ancho en esta fila (%)</label><input type="number" class="form-control form-control-sm cell-width" min="1" max="100" step="1" value="${cell.width || Math.round(100 / row.length)}"></div>`;
+      cellEl.querySelector('.cell-label').addEventListener('input', event => { cell.label = event.target.value; });
+      cellEl.querySelector('.cell-field').addEventListener('change', event => { cell.field = event.target.value; });
+      cellEl.querySelector('.cell-width').addEventListener('change', event => { cell.width = Number(event.target.value); });
+      cellEl.querySelector('.remove-cell').addEventListener('click', () => { if (row.length > 1) { row.splice(cellIndex, 1); renderPatientLayout(); } });
+      cells.appendChild(cellEl);
+    });
+    rowEl.querySelector('.add-cell').addEventListener('click', () => { if (row.length < 4) { row.push({field: 'name', label: 'Paciente', width: Math.round(100 / (row.length + 1))}); renderPatientLayout(); } });
+    rowEl.querySelector('.remove-row').addEventListener('click', () => { if (patientLayout.length > 1) { patientLayout.splice(rowIndex, 1); renderPatientLayout(); } });
+    editor.appendChild(rowEl);
+  });
+  document.getElementById('patientInfoLayout').value = JSON.stringify(patientLayout);
+}
+
+document.getElementById('addPatientRow').addEventListener('click', () => {
+  patientLayout.push([{field: 'name', label: 'Paciente', width: 100}]);
+  renderPatientLayout();
+});
+document.querySelector('form').addEventListener('submit', () => {
+  document.getElementById('patientInfoLayout').value = JSON.stringify(patientLayout);
+});
+renderPatientLayout();
+</script>
+{% endblock %}
