@@ -16,9 +16,15 @@
     <a href="{{ url_for('exams.exam_edit', exam_id=exam.id) }}" class="btn btn-sm btn-outline-secondary">
       <i class="bi bi-pencil me-1"></i>Editar
     </a>
+    {% if params %}
     <a href="{{ url_for('designer.design', exam_id=exam.id) }}" class="btn btn-sm btn-info text-white">
       <i class="bi bi-grid-3x3 me-1"></i>Diseñar plantilla
     </a>
+    {% else %}
+    <button class="btn btn-sm btn-info text-white" disabled title="Primero agregue al menos un parámetro">
+      <i class="bi bi-grid-3x3 me-1"></i>Diseñar plantilla
+    </button>
+    {% endif %}
     <a href="{{ url_for('exams.parameter_new', exam_id=exam.id) }}" class="btn btn-sm btn-primary">
       <i class="bi bi-plus me-1"></i>Agregar parámetro
     </a>

@@ -127,7 +127,10 @@
 <div class="help-banner mb-2" id="helpBanner">
   <i class="bi bi-lightbulb"></i>
   <div>
-    <b>Clic</b> = seleccionar | <b>Arrastrar</b> = seleccionar varias | <b>Clic derecho</b> = menú rápido | <b>Doble clic</b> = editar texto | Arrastre los <span style="color:#90caf9">divisores azules</span> entre columnas para ajustar ancho
+    <b>Flujo:</b> 1️⃣ Cree las celdas de la grilla &nbsp;|
+    2️⃣ Seleccione una celda → elija <b>Tipo = Resultado</b> → asigne el <b>Parámetro</b> (Hemoglobina, Glucosa…) → <b>Aplicar</b> &nbsp;|
+    3️⃣ Las celdas de <b>Etiqueta/Encabezado</b> solo llevan texto fijo &nbsp;|
+    <b>Arrastre</b> para seleccionar varias · <b>Clic derecho</b> = menú rápido
     <a href="#" class="text-white ms-2" id="dismissHelp" style="font-size:11px">[Ocultar]</a>
   </div>
 </div>
@@ -208,13 +211,18 @@
           <input type="text" id="cellContent" class="form-control form-control-sm" placeholder="Contenido...">
         </div>
         <div class="mb-2">
-          <label class="form-label mb-0 fw-bold" style="font-size:11px">Parámetro</label>
+          <label class="form-label mb-0 fw-bold" style="font-size:11px">Parámetro
+            <span class="text-muted fw-normal">(de este examen)</span>
+          </label>
           <select id="cellParam" class="form-select form-select-sm">
             <option value="">– ninguno –</option>
             {% for p in params %}
             <option value="{{ p.id }}">{{ p.name }}{% if p.default_units %} ({{ p.default_units }}){% endif %}</option>
             {% endfor %}
           </select>
+          <div class="form-text" style="font-size:10px">
+            Solo aplica a celdas de tipo <strong>Resultado</strong>. Son los parámetros que definió en la pestaña del examen (ej: Hemoglobina, Glucosa).
+          </div>
         </div>
         <div class="mb-2">
           <label class="form-label mb-0 fw-bold" style="font-size:11px">Tipo</label>
