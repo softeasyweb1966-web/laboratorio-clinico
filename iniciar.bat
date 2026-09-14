@@ -14,9 +14,9 @@ echo.
 cd /d "%~dp0"
 
 REM Verificar que el ambiente virtual existe
-if not exist "venv\Scripts\python.exe" (
+if not exist ".venv\Scripts\python.exe" (
     echo  [ERROR] No se encontro el ambiente virtual.
-    echo  Ejecute: python -m venv venv
+    echo  Ejecute: python -m venv .venv
     pause
     exit /b 1
 )
@@ -42,7 +42,7 @@ REM Abrir el navegador despues de 3 segundos en segundo plano
 start /min cmd /c "timeout /t 3 /nobreak >nul && start http://127.0.0.1:5000"
 
 REM Iniciar Flask
-venv\Scripts\python run.py
+.venv\Scripts\python run.py
 
 echo.
 echo  Servidor detenido.
