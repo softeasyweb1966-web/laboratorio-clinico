@@ -81,7 +81,7 @@ def search():
     if consecutive:
         order = Order.query.filter_by(consecutive=consecutive).first()
         if not order:
-            flash('No se encontrÃ³ la atenciÃ³n con ese consecutivo.', 'warning')
+            flash('No se encontró la atención con ese consecutivo.', 'warning')
 
     if order:
         exams, missing_codes = _requested_exams_for_order(order)
@@ -91,7 +91,7 @@ def search():
                 None,
             )
             if not selected_exam:
-                flash('El examen no fue solicitado en esta atenciÃ³n.', 'warning')
+                flash('El examen no fue solicitado en esta atención.', 'warning')
 
     if order and selected_exam:
         return redirect(url_for('results.register', order_id=order.id, exam_id=selected_exam.id))
@@ -112,7 +112,7 @@ def register(order_id, exam_id):
     order = Order.query.get_or_404(order_id)
     exam = Exam.query.get_or_404(exam_id)
     if not _order_contains_exam(order, exam):
-        flash('El examen seleccionado no fue solicitado en esta atenciÃ³n.', 'danger')
+        flash('El examen seleccionado no fue solicitado en esta atención.', 'danger')
         return redirect(url_for('results.search', consecutive=order.consecutive))
 
     patient = order.patient
@@ -151,7 +151,7 @@ def register(order_id, exam_id):
         )
         if not bacteriologist or not signature_path or not os.path.isfile(signature_path):
             flash(
-                'El bacteriÃ³logo seleccionado debe tener una firma cargada antes de registrar el resultado.',
+                'El bacteriólogo seleccionado debe tener una firma cargada antes de registrar el resultado.',
                 'danger',
             )
             return redirect(url_for('results.register', order_id=order_id, exam_id=exam_id))
