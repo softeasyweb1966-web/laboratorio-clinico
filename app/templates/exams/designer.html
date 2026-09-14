@@ -439,7 +439,7 @@ function buildGrid() {
       if (cell.cell_type === 'result' && cell.parameter_id) {
         display = `<span class="text-success fw-bold">[${getParamName(cell.parameter_id)}]</span>`;
       } else if (cell.cell_type === 'result' && !cell.parameter_id) {
-        display = `<span class="text-success fst-italic">[resultado]</span>`;
+        display = `<span class="text-danger fst-italic"><i class="bi bi-exclamation-triangle-fill"></i> sin parámetro</span>`;
       }
       if ((cell.rowspan||1) > 1 || (cell.colspan||1) > 1) {
         display += ` <span class="badge bg-warning text-dark" style="font-size:9px">${cell.rowspan||1}×${cell.colspan||1}</span>`;
@@ -802,6 +802,19 @@ function updateLivePreview() {
 // Save
 // ========================================================================
 document.getElementById('saveBtn').addEventListener('click', () => {
+  // Celdas 'result' sin parámetro se convierten a 'label' automáticamente
+  let autoFixed = 0;
+  Object.values(cells).forEach(c => {
+    if (c && c.cell_type === 'result' && !c.parameter_id) {
+      c.cell_type = 'label';
+      autoFixed++;
+    }
+  });
+  if (autoFixed > 0) {
+    buildGrid();
+    showToast(`⚠️ ${autoFixed} celda(s) de resultado sin parámetro fueron convertidas a etiqueta.`, 'warning');
+  }
+
   const payload = Object.values(cells).filter(c => c && (c.content || c.parameter_id || c.cell_type !== 'label' || (c.rowspan||1) > 1 || (c.colspan||1) > 1));
   const meta = {row:-1, col:-1, rowspan:1, colspan:1, cell_type:'meta', content: JSON.stringify({rows: ROWS, cols: COLS, colWidths}), parameter_id:null, style:{}};
   fetch('{{ url_for("designer.save_layout", exam_id=exam.id) }}', {
