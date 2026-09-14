@@ -39,6 +39,7 @@
 <hr class="mt-1">
 
 <form method="post" id="resultForm">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <div class="row g-3">
     <!-- Grid / result entry -->
     <div class="col-lg-8">

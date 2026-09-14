@@ -33,12 +33,14 @@
         </a>
         {% if not cfg.is_default %}
         <form method="post" action="{{ url_for('pdf_config.set_default', cfg_id=cfg.id) }}" class="d-inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button type="submit" class="btn btn-sm btn-outline-primary">
             <i class="bi bi-star me-1"></i>Predeterminar
           </button>
         </form>
         <form method="post" action="{{ url_for('pdf_config.config_delete', cfg_id=cfg.id) }}" class="d-inline"
               onsubmit="return confirm('¿Eliminar esta configuración?')">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button type="submit" class="btn btn-sm btn-outline-danger">
             <i class="bi bi-trash"></i>
           </button>

@@ -6,6 +6,7 @@
     <h4><i class="bi bi-journal-medical me-2"></i>{{ 'Editar' if exam else 'Nuevo' }} Examen</h4>
     <hr>
     <form method="post" class="card p-4 shadow-sm">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="row g-3">
         <div class="col-md-4">
           <label class="form-label">Código *</label>
