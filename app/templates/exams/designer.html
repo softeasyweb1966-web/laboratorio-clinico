@@ -806,7 +806,10 @@ document.getElementById('saveBtn').addEventListener('click', () => {
   const meta = {row:-1, col:-1, rowspan:1, colspan:1, cell_type:'meta', content: JSON.stringify({rows: ROWS, cols: COLS, colWidths}), parameter_id:null, style:{}};
   fetch('{{ url_for("designer.save_layout", exam_id=exam.id) }}', {
     method: 'POST',
-    headers: {'Content-Type': 'application/json'},
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': '{{ csrf_token() }}',
+    },
     body: JSON.stringify([meta, ...payload]),
   })
   .then(r => r.json())
