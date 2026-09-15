@@ -18,9 +18,12 @@
                placeholder="Cédula, nombre o apellido..." autocomplete="off">
         <div id="pacienteSugerencias" class="list-group position-absolute w-100" style="z-index:1050; max-height:220px; overflow-y:auto;"></div>
         <div class="form-text">
-          <a href="{{ url_for('pacientes.nuevo') }}" target="_blank" class="text-decoration-none">
+          <a href="{{ url_for('pacientes.nuevo') }}" id="linkCrearPaciente" class="text-decoration-none">
             <i class="bi bi-plus me-1"></i>Crear nuevo paciente
           </a>
+          <span class="text-muted ms-2" id="msgPacienteCreado" style="display:none">
+            <i class="bi bi-check-circle-fill text-success me-1"></i>Paciente creado. Búsquelo arriba por cédula.
+          </span>
         </div>
       </div>
       <div class="col-md-7">
@@ -408,11 +411,35 @@ document.getElementById('formAtencion').addEventListener('submit', function(e) {
     e.preventDefault();
     alert('Debe seleccionar un paciente de la lista.');
     document.getElementById('pacienteBusqueda').focus();
+    return;
+  }
+  if (!document.getElementById('clienteIdHidden').value) {
+    e.preventDefault();
+    alert('Debe seleccionar una empresa de la lista. Si es particular, busque "PARTICULAR" o el cliente correspondiente.');
+    document.getElementById('clienteBusqueda').focus();
+    return;
   }
   if (examenes.length === 0) {
     e.preventDefault();
     alert('Debe agregar al menos un examen.');
   }
+});
+
+// Detectar retorno desde creación de paciente
+document.getElementById('linkCrearPaciente').addEventListener('click', function(e) {
+  e.preventDefault();
+  var url = this.href;
+  var win = window.open(url, '_blank', 'width=900,height=700');
+  var timer = setInterval(function() {
+    if (win.closed) {
+      clearInterval(timer);
+      document.getElementById('msgPacienteCreado').style.display = 'inline';
+      document.getElementById('pacienteBusqueda').focus();
+      setTimeout(function() {
+        document.getElementById('msgPacienteCreado').style.display = 'none';
+      }, 8000);
+    }
+  }, 500);
 });
 </script>
 {% endblock %}
