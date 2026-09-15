@@ -39,11 +39,6 @@
     <label class="form-label small">Descripción</label>
     <input type="text" name="rv_text_value[]" class="form-control form-control-sm" value="{{ rv.text_value if rv else '' }}">
   </div>
-  <!-- Hidden placeholders for absent types -->
-  <input type="hidden" name="rv_min_value[]" class="range-fields" style="{{ 'display:none' if not (rv and rv.ref_type == 'range') else '' }}">
-  <input type="hidden" name="rv_max_value[]" class="range-fields" style="{{ 'display:none' if not (rv and rv.ref_type == 'range') else '' }}">
-  <input type="hidden" name="rv_exact_value[]" class="exact-fields" style="{{ 'display:none' if not (rv and rv.ref_type == 'exact') else '' }}">
-  <input type="hidden" name="rv_text_value[]" class="text-fields" style="{{ 'display:none' if not (rv and rv.ref_type == 'text') else '' }}">
   <div class="col-md-2">
     <label class="form-label small">Unidades</label>
     <input type="text" name="rv_units[]" class="form-control form-control-sm" value="{{ rv.units if rv else '' }}" placeholder="mg/dL">

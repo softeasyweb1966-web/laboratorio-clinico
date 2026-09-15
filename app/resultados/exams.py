@@ -153,11 +153,6 @@ def _param_from_form(param):
 
 
 def _save_reference_values(param, form):
-    """
-    Reference values come as arrays in the form:
-    rv_gender[], rv_min_age[], rv_max_age[], rv_ref_type[],
-    rv_min_value[], rv_max_value[], rv_exact_value[], rv_text_value[], rv_units[]
-    """
     genders = form.getlist('rv_gender[]')
     min_ages = form.getlist('rv_min_age[]')
     max_ages = form.getlist('rv_max_age[]')
@@ -168,16 +163,24 @@ def _save_reference_values(param, form):
     text_vals = form.getlist('rv_text_value[]')
     units_list = form.getlist('rv_units[]')
 
-    for i in range(len(ref_types)):
+    # Rellenar listas cortas con cadenas vacias para igualar longitud
+    n = len(ref_types)
+    def _pad(lst): return lst + [''] * (n - len(lst))
+    min_vals   = _pad(min_vals)
+    max_vals   = _pad(max_vals)
+    exact_vals = _pad(exact_vals)
+    text_vals  = _pad(text_vals)
+
+    for i in range(n):
         rv = ReferenceValue(parameter_id=param.id)
         rv.gender = genders[i] if i < len(genders) else None
         rv.min_age = _int_or_none(min_ages[i] if i < len(min_ages) else '')
         rv.max_age = _int_or_none(max_ages[i] if i < len(max_ages) else '')
-        rv.ref_type = ref_types[i] if i < len(ref_types) else 'range'
-        rv.min_value = _float_or_none(min_vals[i] if i < len(min_vals) else '')
-        rv.max_value = _float_or_none(max_vals[i] if i < len(max_vals) else '')
-        rv.exact_value = _float_or_none(exact_vals[i] if i < len(exact_vals) else '')
-        rv.text_value = text_vals[i] if i < len(text_vals) else ''
+        rv.ref_type = ref_types[i]
+        rv.min_value = _float_or_none(min_vals[i])
+        rv.max_value = _float_or_none(max_vals[i])
+        rv.exact_value = _float_or_none(exact_vals[i])
+        rv.text_value = text_vals[i]
         rv.units = units_list[i] if i < len(units_list) else ''
         db.session.add(rv)
     db.session.commit()
