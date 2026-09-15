@@ -1,0 +1,122 @@
+# PENDIENTES - LabClinico Integrado
+# Actualizado: 2026-09-15
+
+=============================================================================
+MODULO: HOJAS DE TRABAJO
+=============================================================================
+[ ] Diseñar template de hoja de trabajo por atención (listado de exámenes
+    solicitados con espacio para anotar resultados a mano antes de digitarlos)
+[ ] Opción de impresión / PDF de hoja de trabajo desde la atención
+[ ] Filtro por fecha / bacterióloga / estado
+
+=============================================================================
+MODULO: RIPS
+=============================================================================
+[~] Generación de archivo RIPS JSON (estructura base existe en app/rips/)
+[ ] Validar estructura contra resolución 2275 de 2023 (nuevo estándar)
+[ ] Exportar ZIP con todos los archivos requeridos
+[ ] Historial de RIPS generados por período
+
+=============================================================================
+MODULO: CIERRES DIARIOS
+=============================================================================
+[ ] Resumen de atenciones del día (cantidad, valor total, por empresa)
+[ ] Resumen de pagos recibidos (efectivo, transferencia, tarjeta)
+[ ] Saldo pendiente por cobrar del día
+[ ] Impresión / PDF del cierre diario
+[ ] Bloqueo de modificaciones sobre atenciones cerradas
+
+=============================================================================
+MODULO: FACTURACIÓN EN TIEMPO REAL
+=============================================================================
+[ ] Integración con proveedor de factura electrónica (DIAN)
+    - Definir proveedor: Siigo / Alegra / Facturama / otro
+[ ] Generación de factura electrónica desde prefactura aprobada
+[ ] Envío automático al correo del cliente
+[ ] Consulta de estado de facturas emitidas (CUFE)
+[ ] Notas crédito / débito
+
+=============================================================================
+MODULO: STICKERS DE MUESTRAS
+=============================================================================
+[ ] Diseño de sticker: consecutivo, nombre paciente, fecha, código examen
+[ ] Soporte para impresoras de etiquetas (Zebra / Brother ZPL o PDF)
+[ ] Generación desde la atención (uno por examen o uno general)
+[ ] Configuración de tamaño de etiqueta (25x50mm, 38x25mm, etc.)
+
+=============================================================================
+MODULO: ESTADÍSTICAS
+=============================================================================
+[ ] Estadísticas por prueba (CUPS): cantidad por período, valor facturado
+[ ] Estadísticas por cliente: volumen, valor, exámenes más solicitados
+[ ] Comparativo mes a mes / año a año
+[ ] Exportar a Excel
+
+=============================================================================
+MODULO: INFORME DATOS DE ATENCIÓN POR CLIENTE (SYNLAB)
+=============================================================================
+[ ] Definir formato exacto requerido por Synlab
+[ ] Campos requeridos: fecha, paciente, documento, exámenes, valores, etc.
+[ ] Exportar en formato Excel o CSV según especificación
+[ ] Filtro por rango de fechas y cliente
+
+=============================================================================
+MODULO: DASHBOARD ADMINISTRATIVO
+=============================================================================
+[ ] Indicadores clave visibles al ingresar (solo para admin):
+    - Atenciones del día / semana / mes
+    - Cartera vencida por cliente
+    - Ingresos del mes vs mes anterior
+    - Exámenes pendientes de resultado
+    - Resultados pendientes de aprobar
+[ ] Gráficas (barras / torta) con Chart.js
+[ ] Acceso restringido solo a rol admin
+
+=============================================================================
+MODULO: INTEGRACIÓN ARCHIVO EXCEL EN RED (CONTABLE)
+=============================================================================
+[ ] Programa monitor (servicio/script) que vigila el archivo Excel en red:
+    - Detecta cambios (fecha modificación o hash del archivo)
+    - Lee filas nuevas desde la última lectura
+[ ] Por cada fila nueva:
+    - Buscar paciente por documento; si no existe, crearlo automáticamente
+    - Generar atención con numeración SEPARADA (prefijo configurable, ej: "EXT-")
+    - Registrar exámenes solicitados según columnas del Excel
+[ ] Configuración:
+    - Ruta del archivo en red (UNC o letra de unidad mapeada)
+    - Columnas del Excel: documento, nombre, fecha nacimiento, sexo,
+      exámenes (CUPS), empresa, etc.
+    - Prefijo y numeración inicial para atenciones externas
+[ ] Log de importaciones (qué se procesó, errores, duplicados)
+[ ] Interfaz web para ver el log y reejecutar manualmente
+
+=============================================================================
+PENDIENTES TÉCNICOS / DEUDA TÉCNICA
+=============================================================================
+[ ] Migración formal con Flask-Migrate (alembic) — actualmente se usa
+    db.create_all() y ALTER TABLE manuales
+[ ] Agregar columna logo_layout al modelo PDFConfig en models.py
+    (ya existe en BD, pendiente reflejar en el modelo Python)
+[ ] Revisar por qué el campo "no deja escribir" en plantilla de resultados
+    cuando la celda no está correctamente configurada como tipo Resultado
+[ ] Pruebas de generación de PDF con logo en disposición "stacked"
+[ ] Definir política de backups de la BD PostgreSQL
+
+=============================================================================
+ESTADO GENERAL DEL SISTEMA (lo que YA funciona)
+=============================================================================
+[x] Registro de pacientes
+[x] Registro de clientes / empresas
+[x] CUPS / servicios con tarifas por cliente
+[x] Atenciones (apertura, búsqueda, consecutivo automático)
+[x] Cartera: prefacturas, recaudos, estado de cuenta
+[x] RIPS (estructura base)
+[x] Módulo de resultados: exámenes, analitos, valores de referencia
+[x] Diseñador visual de plantillas de resultados
+[x] Registro de resultados con firma de bacterióloga
+[x] Generación de PDF con logo, datos institución, QR
+[x] Verificación de autenticidad por QR
+[x] Usuarios con roles y permisos
+[x] Usuario EASY protegido (solo cambia clave)
+[x] Reset de clave por administrador
+[x] Configuración PDF (logo, disposición, márgenes, pie de página)
