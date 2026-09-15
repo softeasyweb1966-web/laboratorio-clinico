@@ -156,22 +156,29 @@ def register(order_id, exam_id):
             )
             return redirect(url_for('results.register', order_id=order_id, exam_id=exam_id))
 
-        result = existing or Result(order_id=order_id, exam_id=exam_id)
-        if not existing:
+        reviewer_id = request.form.get('reviewer_id', type=int)
+        status = {'save': 'draft', 'finalize': 'final', 'approve': 'approved'}.get(action, 'draft')
+        notes = request.form.get('notes', '').strip()
+
+        if existing:
+            result = existing
+            result.bacteriologist_id = bacteriologist.id
+            result.reviewer_id = reviewer_id or None
+            result.notes = notes
+            result.status = status
+        else:
+            result = Result(
+                order_id=order_id,
+                exam_id=exam_id,
+                bacteriologist_id=bacteriologist.id,
+                reviewer_id=reviewer_id or None,
+                notes=notes,
+                status=status,
+            )
             result.generate_qr_token()
             db.session.add(result)
-            db.session.flush()
 
-        result.bacteriologist_id = bacteriologist.id
-        reviewer_id = request.form.get('reviewer_id', type=int)
-        result.reviewer_id = reviewer_id or None
-        result.notes = request.form.get('notes', '').strip()
-        result.status = {
-            'save': 'draft',
-            'finalize': 'final',
-            'approve': 'approved',
-        }.get(action, 'draft')
-
+        db.session.flush()
         ParameterResult.query.filter_by(result_id=result.id).delete()
         db.session.flush()
 
