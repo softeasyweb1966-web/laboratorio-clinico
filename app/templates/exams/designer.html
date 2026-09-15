@@ -211,8 +211,8 @@
           <input type="text" id="cellContent" class="form-control form-control-sm" placeholder="Contenido...">
         </div>
         <div class="mb-2">
-          <label class="form-label mb-0 fw-bold" style="font-size:11px">Parámetro
-            <span class="text-muted fw-normal">(de este examen)</span>
+          <label class="form-label mb-0 fw-bold" style="font-size:11px">Analito
+            <span class="text-muted fw-normal">(campo de resultado)</span>
           </label>
           <select id="cellParam" class="form-select form-select-sm">
             <option value="">– ninguno –</option>
@@ -222,6 +222,11 @@
           </select>
           <div class="form-text" style="font-size:10px">
             Solo aplica a celdas de tipo <strong>Resultado</strong>. Son los parámetros que definió en la pestaña del examen (ej: Hemoglobina, Glucosa).
+          </div>
+          <!-- Botón autocompletar referencia -->
+          <div id="autoRefPanel" class="d-none mt-1">
+            <div class="fw-bold" style="font-size:10px;color:#6c757d">INSERTAR VALOR DE REFERENCIA:</div>
+            <div id="autoRefOptions" class="d-flex flex-column gap-1 mt-1"></div>
           </div>
         </div>
         <div class="mb-2">
@@ -285,6 +290,99 @@
 </div>
 
 <script>
+// ========================================================================
+// Datos de referencia por analito (para autocompletar)
+// ========================================================================
+const paramRefs = {
+  {% for p in params %}
+  {{ p.id }}: {
+    name: {{ p.name|tojson }},
+    units: {{ (p.default_units or '')|tojson }},
+    refs: [
+      {% for rv in p.reference_values %}
+      {
+        gender: {{ (rv.gender or '')|tojson }},
+        min_age: {{ rv.min_age if rv.min_age is not none else 'null' }},
+        max_age: {{ rv.max_age if rv.max_age is not none else 'null' }},
+        ref_type: {{ rv.ref_type|tojson }},
+        min_value: {{ rv.min_value if rv.min_value is not none else 'null' }},
+        max_value: {{ rv.max_value if rv.max_value is not none else 'null' }},
+        exact_value: {{ rv.exact_value if rv.exact_value is not none else 'null' }},
+        text_value: {{ (rv.text_value or '')|tojson }},
+        units: {{ (rv.units or '')|tojson }},
+      },
+      {% endfor %}
+    ]
+  },
+  {% endfor %}
+};
+
+function formatRefText(rv, paramUnits) {
+  const u = rv.units || paramUnits || '';
+  const genderLabel = rv.gender === 'M' ? 'Hombres' : rv.gender === 'F' ? 'Mujeres' : '';
+  const ageLabel = (rv.min_age != null || rv.max_age != null)
+    ? `${rv.min_age != null ? rv.min_age : 0}-${rv.max_age != null ? rv.max_age : '+'} años`
+    : '';
+  const prefix = [genderLabel, ageLabel].filter(Boolean).join(', ');
+  let value = '';
+  if (rv.ref_type === 'range') {
+    const min = rv.min_value != null ? rv.min_value : '';
+    const max = rv.max_value != null ? rv.max_value : '';
+    value = min !== '' && max !== '' ? `${min} – ${max}` : min !== '' ? `> ${min}` : `< ${max}`;
+  } else if (rv.ref_type === 'exact') {
+    value = rv.exact_value != null ? String(rv.exact_value) : '';
+  } else {
+    value = rv.text_value || '';
+  }
+  return [prefix, value, u].filter(Boolean).join(': ').replace(': :', ':');
+}
+
+function updateAutoRefPanel(paramId) {
+  const panel = document.getElementById('autoRefPanel');
+  const optionsDiv = document.getElementById('autoRefOptions');
+  optionsDiv.innerHTML = '';
+
+  if (!paramId || !paramRefs[paramId] || !paramRefs[paramId].refs.length) {
+    panel.classList.add('d-none');
+    return;
+  }
+
+  const p = paramRefs[paramId];
+
+  // Botón para insertar todos los rangos juntos
+  if (p.refs.length > 1) {
+    const allText = p.refs.map(rv => formatRefText(rv, p.units)).join(' / ');
+    const btnAll = document.createElement('button');
+    btnAll.type = 'button';
+    btnAll.className = 'btn btn-xs btn-outline-secondary py-0 text-start';
+    btnAll.style.fontSize = '10px';
+    btnAll.innerHTML = `<i class="bi bi-collection me-1"></i>Todos: <em>${allText}</em>`;
+    btnAll.addEventListener('click', () => insertRefText(allText));
+    optionsDiv.appendChild(btnAll);
+  }
+
+  // Botón individual por cada rango
+  p.refs.forEach(rv => {
+    const text = formatRefText(rv, p.units);
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-xs btn-outline-primary py-0 text-start';
+    btn.style.fontSize = '10px';
+    btn.innerHTML = `<i class="bi bi-arrow-right-short"></i>${text}`;
+    btn.addEventListener('click', () => insertRefText(text));
+    optionsDiv.appendChild(btn);
+  });
+
+  panel.classList.remove('d-none');
+}
+
+function insertRefText(text) {
+  document.getElementById('cellContent').value = text;
+  selectedCells.forEach(key => { if (cells[key]) cells[key].content = text; });
+  buildGrid();
+  showToast('✅ Texto insertado', 'success');
+}
+
 // ========================================================================
 // State
 // ========================================================================
@@ -584,8 +682,8 @@ function updateCellPanel(key) {
   document.getElementById('cellContent').value = cell.content || '';
   document.getElementById('cellType').value = cell.cell_type || 'label';
   document.getElementById('cellParam').value = cell.parameter_id || '';
-  // Show width of first column in selection
   document.getElementById('colWidth').value = colWidths[cell.col] || DEFAULT_COL_WIDTH;
+  updateAutoRefPanel(cell.parameter_id || null);
 }
 
 document.getElementById('applyCellBtn').addEventListener('click', () => {
@@ -616,6 +714,7 @@ document.getElementById('cellType').addEventListener('change', function() {
 document.getElementById('cellParam').addEventListener('change', function() {
   const pid = this.value;
   selectedCells.forEach(key => { if (cells[key]) cells[key].parameter_id = pid ? parseInt(pid) : null; });
+  updateAutoRefPanel(pid ? parseInt(pid) : null);
   buildGrid();
 });
 
