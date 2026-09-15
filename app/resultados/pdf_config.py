@@ -120,6 +120,7 @@ def _config_from_form(cfg):
     cfg.name = request.form.get('name', 'Default').strip()
     cfg.logo_position = request.form.get('logo_position', 'header')
     cfg.logo_alignment = request.form.get('logo_alignment', 'left')
+    cfg.logo_layout = request.form.get('logo_layout', 'side')
     cfg.page_number_style = request.form.get('page_number_style', 'none')
     cfg.institution_name = request.form.get('institution_name', '').strip()
     cfg.institution_address = request.form.get('institution_address', '').strip()

@@ -19,14 +19,21 @@
           <small class="text-muted">Logo actual: {{ cfg.logo_path }}</small>
           {% endif %}
         </div>
-        <div class="col-md-6">
+        <div class="col-md-4">
           <label class="form-label">Ubicación del logo</label>
           <select name="logo_position" class="form-select">
             <option value="header" {{ 'selected' if not cfg or cfg.logo_position == 'header' }}>Encabezado</option>
             <option value="footer" {{ 'selected' if cfg and cfg.logo_position == 'footer' }}>Pie de página</option>
           </select>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-4">
+          <label class="form-label">Disposición del logo</label>
+          <select name="logo_layout" class="form-select">
+            <option value="side" {{ 'selected' if not cfg or (cfg.logo_layout or 'side') == 'side' }}>Al lado de los datos</option>
+            <option value="stacked" {{ 'selected' if cfg and (cfg.logo_layout or '') == 'stacked' }}>Logo arriba, datos abajo</option>
+          </select>
+        </div>
+        <div class="col-md-4">
           <label class="form-label">Alineación del logo</label>
           <select name="logo_alignment" class="form-select">
             <option value="left" {{ 'selected' if not cfg or cfg.logo_alignment == 'left' }}>Izquierda</option>

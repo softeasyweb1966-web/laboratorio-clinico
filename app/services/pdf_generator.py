@@ -211,43 +211,44 @@ def _build_header(cfg, styles, page_size, margin_left, margin_right):
         if os.path.exists(logo_full):
             logo_img = Image(logo_full, width=40 * mm, height=20 * mm)
 
-    if logo_img:
-        text_col = []
-        if cfg.institution_name:
-            text_col.append(Paragraph(cfg.institution_name, header_style))
-        if cfg.institution_address:
-            text_col.append(Paragraph(cfg.institution_address, sub_style))
-        if cfg.institution_phone:
-            text_col.append(Paragraph(f'Tel: {cfg.institution_phone}', sub_style))
-        if cfg.header_text:
-            text_col.append(Paragraph(cfg.header_text, sub_style))
+    text_items = []
+    if cfg.institution_name:
+        text_items.append(Paragraph(cfg.institution_name, header_style))
+    if cfg.institution_address:
+        text_items.append(Paragraph(cfg.institution_address, sub_style))
+    if cfg.institution_phone:
+        text_items.append(Paragraph(f'Tel: {cfg.institution_phone}', sub_style))
+    if cfg.header_text:
+        text_items.append(Paragraph(cfg.header_text, sub_style))
 
-        alignment = getattr(cfg, 'logo_alignment', None) or 'left'
-        if alignment == 'center':
-            logo_img.hAlign = 'CENTER'
-            flowables.append(logo_img)
-            flowables.extend(text_col)
-        else:
-            columns = [logo_img, text_col] if alignment == 'left' else [text_col, logo_img]
-            header_table = Table(
-                [columns],
-                colWidths=[45 * mm, usable_width - 45 * mm] if alignment == 'left' else [usable_width - 45 * mm, 45 * mm],
-            )
-            header_table.setStyle(TableStyle([
-                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ('LEFTPADDING', (0, 0), (-1, -1), 0),
-                ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-            ]))
-            flowables.append(header_table)
+    logo_layout = getattr(cfg, 'logo_layout', None) or 'side'
+    alignment = getattr(cfg, 'logo_alignment', None) or 'left'
+
+    if logo_img and logo_layout == 'stacked':
+        # Logo centrado en su propia línea, datos debajo centrados
+        logo_img.hAlign = 'CENTER'
+        flowables.append(logo_img)
+        flowables.append(Spacer(1, 2 * mm))
+        flowables.extend(text_items)
+    elif logo_img and alignment == 'center':
+        logo_img.hAlign = 'CENTER'
+        flowables.append(logo_img)
+        flowables.extend(text_items)
+    elif logo_img:
+        # side: logo al lado de los datos
+        logo_w = 45 * mm
+        text_w = usable_width - logo_w
+        columns = [logo_img, text_items] if alignment == 'left' else [text_items, logo_img]
+        col_widths = [logo_w, text_w] if alignment == 'left' else [text_w, logo_w]
+        header_table = Table([columns], colWidths=col_widths)
+        header_table.setStyle(TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ]))
+        flowables.append(header_table)
     else:
-        if cfg.institution_name:
-            flowables.append(Paragraph(cfg.institution_name, header_style))
-        if cfg.institution_address:
-            flowables.append(Paragraph(cfg.institution_address, sub_style))
-        if cfg.institution_phone:
-            flowables.append(Paragraph(f'Tel: {cfg.institution_phone}', sub_style))
-        if cfg.header_text:
-            flowables.append(Paragraph(cfg.header_text, sub_style))
+        flowables.extend(text_items)
 
     flowables.append(HRFlowable(width='100%', thickness=1, color=colors.HexColor('#0d6efd')))
     return flowables
