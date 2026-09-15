@@ -21,12 +21,12 @@
       <i class="bi bi-grid-3x3 me-1"></i>Diseñar plantilla
     </a>
     {% else %}
-    <button class="btn btn-sm btn-info text-white" disabled title="Primero agregue al menos un parámetro">
+    <button class="btn btn-sm btn-info text-white" disabled title="Primero agregue al menos un analito">
       <i class="bi bi-grid-3x3 me-1"></i>Diseñar plantilla
     </button>
     {% endif %}
     <a href="{{ url_for('exams.parameter_new', exam_id=exam.id) }}" class="btn btn-sm btn-primary">
-      <i class="bi bi-plus me-1"></i>Agregar parámetro
+      <i class="bi bi-plus me-1"></i>Agregar analito
     </a>
   </div>
 </div>
@@ -36,12 +36,12 @@
 <p>{{ exam.description }}</p>
 {% endif %}
 
-<h6 class="mt-4 mb-3">Parámetros</h6>
+<h6 class="mt-4 mb-3">Analitos (campos de resultado)</h6>
 <div class="table-responsive">
   <table class="table table-bordered table-sm align-middle">
     <thead class="table-secondary">
       <tr>
-        <th>#</th><th>Nombre</th><th>Tipo</th><th>Unidades</th><th>Fijo</th><th>Valor fijo</th><th>Valores de referencia</th><th></th>
+        <th>#</th><th>Nombre del analito</th><th>Tipo</th><th>Unidades</th><th>Fijo</th><th>Valor fijo</th><th>Valores de referencia</th><th></th>
       </tr>
     </thead>
     <tbody>
@@ -77,7 +77,7 @@
         </td>
       </tr>
       {% else %}
-      <tr><td colspan="8" class="text-center text-muted">Sin parámetros. <a href="{{ url_for('exams.parameter_new', exam_id=exam.id) }}">Agregar parámetro</a>.</td></tr>
+      <tr><td colspan="8" class="text-center text-muted">Sin analitos. <a href="{{ url_for('exams.parameter_new', exam_id=exam.id) }}">Agregar analito</a>.</td></tr>
       {% endfor %}
     </tbody>
   </table>

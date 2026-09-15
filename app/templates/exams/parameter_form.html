@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% block title %}{{ 'Editar' if param else 'Nuevo' }} Parámetro – {{ exam.name }}{% endblock %}
+{% block title %}{{ 'Editar' if param else 'Nuevo' }} Analito – {{ exam.name }}{% endblock %}
 {% block content %}
 <div class="row justify-content-center">
   <div class="col-lg-9">
-    <h4><i class="bi bi-sliders me-2"></i>{{ 'Editar' if param else 'Nuevo' }} Parámetro
+    <h4><i class="bi bi-sliders me-2"></i>{{ 'Editar' if param else 'Nuevo' }} Analito
       <small class="text-muted fs-6 ms-2">{{ exam.name }}</small>
     </h4>
     <hr>
@@ -11,7 +11,7 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="row g-3">
         <div class="col-md-6">
-          <label class="form-label">Nombre del parámetro *</label>
+          <label class="form-label">Nombre del analito *</label>
           <input type="text" name="name" class="form-control" value="{{ param.name if param else '' }}" required>
         </div>
         <div class="col-md-3">
