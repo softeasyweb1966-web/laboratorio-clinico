@@ -1,11 +1,46 @@
-from flask import render_template, redirect, url_for, flash, request, jsonify
+import os
+from flask import render_template, redirect, url_for, flash, request, jsonify, current_app
 from flask_login import login_required, current_user
+from werkzeug.utils import secure_filename
 from app import db
 from app.models import (Usuario, Modulo, Pais, Departamento, Municipio,
                         TipoIdentificacion, TipoUsuarioPaciente, Sexo,
-                        FormaPago, NumeracionInicial, ConfigRips, PersonaAtiende)
+                        FormaPago, NumeracionInicial, ConfigRips, PersonaAtiende,
+                        UserResultProfile)
 from app.admin import admin_bp
 from functools import wraps
+
+ALLOWED_IMG = {'png', 'jpg', 'jpeg', 'gif'}
+
+
+def _save_signature(file, old_filename=None):
+    """Guarda imagen de firma y retorna el nombre del archivo."""
+    if not file or file.filename == '':
+        return old_filename
+    ext = file.filename.rsplit('.', 1)[-1].lower()
+    if ext not in ALLOWED_IMG:
+        return old_filename
+    filename = secure_filename(f'firma_{file.filename}')
+    file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
+    return filename
+
+
+def _apply_results_profile(usuario, form):
+    """Crea o actualiza el UserResultProfile del usuario desde el formulario."""
+    results_role = form.get('results_role', '').strip()
+    professional_id = form.get('professional_id', '').strip()
+    if not results_role:
+        return
+    if not usuario.results_profile:
+        usuario.results_profile = UserResultProfile(user_id=usuario.id)
+        db.session.add(usuario.results_profile)
+    usuario.results_profile.role = results_role
+    usuario.results_profile.professional_id = professional_id or None
+    signature_file = request.files.get('signature_image')
+    old = usuario.results_profile.signature_image
+    saved = _save_signature(signature_file, old)
+    if saved:
+        usuario.results_profile.signature_image = saved
 
 
 def admin_requerido(f):
@@ -65,6 +100,8 @@ def usuario_nuevo():
             if rol != 'admin':
                 u.modulos = Modulo.query.filter(Modulo.id.in_(modulos_ids)).all()
             db.session.add(u)
+            db.session.flush()
+            _apply_results_profile(u, request.form)
             db.session.commit()
             flash(f'Usuario "{username}" creado correctamente.', 'success')
             return redirect(url_for('admin.usuarios'))
@@ -82,8 +119,9 @@ def usuario_editar(id):
     if request.method == 'POST':
         u.nombre = request.form.get('nombre', '').strip()
         u.email = request.form.get('email', '').strip()
-        u.rol = request.form.get('rol', 'operador')
-        u.activo = request.form.get('activo') == 'on'
+        if u.username != 'EASY':
+            u.rol = request.form.get('rol', 'operador')
+            u.activo = request.form.get('activo') == 'on'
         modulos_ids = request.form.getlist('modulos')
         nueva_pass = request.form.get('password', '')
 
@@ -96,6 +134,7 @@ def usuario_editar(id):
         if u.rol != 'admin':
             u.modulos = Modulo.query.filter(Modulo.id.in_(modulos_ids)).all()
 
+        _apply_results_profile(u, request.form)
         db.session.commit()
         flash('Usuario actualizado correctamente.', 'success')
         return redirect(url_for('admin.usuarios'))
@@ -103,12 +142,34 @@ def usuario_editar(id):
     return render_template('admin/usuarios/form.html', usuario=u, modulos=modulos)
 
 
+@admin_bp.route('/usuarios/<int:id>/reset-password', methods=['GET', 'POST'])
+@login_required
+@admin_requerido
+def usuario_reset_password(id):
+    u = Usuario.query.get_or_404(id)
+    if request.method == 'POST':
+        nueva = request.form.get('password', '').strip()
+        confirma = request.form.get('confirma', '').strip()
+        if len(nueva) < 6:
+            flash('La contraseña debe tener al menos 6 caracteres.', 'danger')
+        elif nueva != confirma:
+            flash('Las contraseñas no coinciden.', 'danger')
+        else:
+            u.set_password(nueva)
+            db.session.commit()
+            flash(f'Contraseña de "{u.username}" actualizada correctamente.', 'success')
+            return redirect(url_for('admin.usuarios'))
+    return render_template('admin/usuarios/reset_password.html', usuario=u)
+
+
 @admin_bp.route('/usuarios/<int:id>/toggle')
 @login_required
 @admin_requerido
 def usuario_toggle(id):
     u = Usuario.query.get_or_404(id)
-    if u.id == current_user.id:
+    if u.username == 'EASY':
+        flash('El usuario EASY no puede desactivarse.', 'warning')
+    elif u.id == current_user.id:
         flash('No puedes desactivar tu propio usuario.', 'warning')
     else:
         u.activo = not u.activo

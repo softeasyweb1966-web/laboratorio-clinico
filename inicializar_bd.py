@@ -40,18 +40,19 @@ with app.app_context():
     db.session.commit()
     print('Modulos creados.')
 
-    if not Usuario.query.filter_by(username='EASY').first():
-        easy_user = Usuario(
+    easy = Usuario.query.filter_by(username='EASY').first()
+    if not easy:
+        easy = Usuario(
             username='EASY',
             nombre='Administrador EASY',
             email='easy@laboratorio.local',
             rol='admin',
             activo=True,
         )
-        easy_user.set_password('Admin2026*')
-        db.session.add(easy_user)
+        easy.set_password('Easy2026*')
+        db.session.add(easy)
         db.session.commit()
-        print('Usuario EASY creado. Password: Admin2026*')
+        print('Usuario EASY creado. Password: Easy2026*')
     else:
         print('Usuario EASY ya existe.')
 
@@ -199,4 +200,4 @@ with app.app_context():
     print('\nInicializacion completada.')
     print('URL: http://127.0.0.1:5000')
     print('Usuario: EASY')
-    print('Password: Admin2026*')
+    print('Password: Easy2026*')

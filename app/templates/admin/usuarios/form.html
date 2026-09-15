@@ -8,17 +8,25 @@
   <div class="col-md-7">
     <div class="card">
       <div class="card-body">
-        <form method="POST" novalidate>
+        <form method="POST" enctype="multipart/form-data" novalidate>
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <div class="row g-3">
+
             {% if not usuario %}
             <div class="col-md-6">
               <label class="form-label">Usuario <span class="text-danger">*</span></label>
-              <input type="text" class="form-control" name="username" required
-                     value="{{ usuario.username if usuario else '' }}">
+              <input type="text" class="form-control" name="username" required value="">
+            </div>
+            {% elif usuario.username == 'EASY' %}
+            <div class="col-12">
+              <div class="alert alert-info py-2 mb-0">
+                <i class="bi bi-shield-lock me-1"></i>
+                Usuario <strong>EASY</strong> — solo se puede cambiar la contraseña y el nombre.
+              </div>
             </div>
             {% endif %}
-            <div class="col-md-{% if usuario %}12{% else %}6{% endif %}">
+
+            <div class="col-12">
               <label class="form-label">Nombre Completo <span class="text-danger">*</span></label>
               <input type="text" class="form-control" name="nombre" required
                      value="{{ usuario.nombre if usuario else '' }}">
@@ -28,6 +36,8 @@
               <input type="email" class="form-control" name="email" required
                      value="{{ usuario.email if usuario else '' }}">
             </div>
+
+            {% if not usuario or usuario.username != 'EASY' %}
             <div class="col-md-4">
               <label class="form-label">Rol</label>
               <select class="form-select" name="rol" id="rolSelect">
@@ -36,12 +46,15 @@
                 <option value="admin" {{ 'selected' if usuario and usuario.rol == 'admin' }}>Administrador</option>
               </select>
             </div>
+            {% endif %}
+
             <div class="col-md-6">
               <label class="form-label">Contraseña {% if not usuario %}<span class="text-danger">*</span>{% else %}<small class="text-muted">(dejar vacío para no cambiar)</small>{% endif %}</label>
-              <input type="password" class="form-control" name="password" 
+              <input type="password" class="form-control" name="password"
                      {% if not usuario %}required minlength="6"{% endif %}>
             </div>
-            {% if usuario %}
+
+            {% if usuario and usuario.username != 'EASY' %}
             <div class="col-md-6 d-flex align-items-end">
               <div class="form-check form-switch mb-2">
                 <input class="form-check-input" type="checkbox" name="activo" id="activo"
@@ -53,6 +66,7 @@
           </div>
 
           <!-- PERMISOS (oculto para admin) -->
+          {% if not usuario or usuario.username != 'EASY' %}
           <div id="permisosSection" class="mt-4">
             <h6 class="fw-semibold mb-3 text-muted text-uppercase" style="font-size:.78rem; letter-spacing:.5px;">
               <i class="bi bi-shield-check me-1"></i>Permisos de Acceso
@@ -61,7 +75,7 @@
               {% for modulo in modulos %}
               <div class="col-md-6">
                 <div class="form-check">
-                  <input class="form-check-input" type="checkbox" name="modulos" 
+                  <input class="form-check-input" type="checkbox" name="modulos"
                          value="{{ modulo.id }}" id="mod_{{ modulo.id }}"
                          {{ 'checked' if usuario and modulo in usuario.modulos }}>
                   <label class="form-check-label" for="mod_{{ modulo.id }}">
@@ -70,6 +84,42 @@
                 </div>
               </div>
               {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+
+          <!-- PERFIL DE RESULTADOS -->
+          <div class="mt-4">
+            <h6 class="fw-semibold mb-3 text-muted text-uppercase" style="font-size:.78rem; letter-spacing:.5px;">
+              <i class="bi bi-clipboard2-pulse me-1"></i>Perfil de Resultados (Bacteriología)
+            </h6>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Rol en resultados</label>
+                <select class="form-select" name="results_role">
+                  <option value="">— Sin perfil —</option>
+                  <option value="bacteriologist" {{ 'selected' if usuario and usuario.results_profile and usuario.results_profile.role == 'bacteriologist' }}>Bacteriólogo/a</option>
+                  <option value="reviewer" {{ 'selected' if usuario and usuario.results_profile and usuario.results_profile.role == 'reviewer' }}>Revisor/a</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">No. Tarjeta Profesional</label>
+                <input type="text" class="form-control" name="professional_id"
+                       value="{{ usuario.results_profile.professional_id if usuario and usuario.results_profile else '' }}">
+              </div>
+              <div class="col-12">
+                <label class="form-label">Imagen de firma
+                  <small class="text-muted">(PNG/JPG, fondo blanco o transparente)</small>
+                </label>
+                {% if usuario and usuario.results_profile and usuario.results_profile.signature_image %}
+                <div class="mb-2">
+                  <img src="{{ url_for('static', filename='uploads/' + usuario.results_profile.signature_image) }}"
+                       style="max-height:60px; border:1px solid #dee2e6; padding:4px; background:#fff;">
+                  <small class="text-muted ms-2">Firma actual — sube una nueva para reemplazarla</small>
+                </div>
+                {% endif %}
+                <input type="file" class="form-control" name="signature_image" accept="image/*">
+              </div>
             </div>
           </div>
 
@@ -83,11 +133,13 @@
   </div>
 </div>
 <script>
+  {% if not usuario or usuario.username != 'EASY' %}
   function togglePermisos() {
     var rol = document.getElementById('rolSelect').value;
     document.getElementById('permisosSection').style.display = (rol === 'admin') ? 'none' : 'block';
   }
   document.getElementById('rolSelect').addEventListener('change', togglePermisos);
   togglePermisos();
+  {% endif %}
 </script>
 {% endblock %}

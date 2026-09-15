@@ -40,10 +40,15 @@
               <a href="{{ url_for('admin.usuario_editar', id=u.id) }}" class="btn btn-sm btn-outline-primary" title="Editar">
                 <i class="bi bi-pencil"></i>
               </a>
+              <a href="{{ url_for('admin.usuario_reset_password', id=u.id) }}" class="btn btn-sm btn-outline-warning" title="Resetear contraseña">
+                <i class="bi bi-key"></i>
+              </a>
+              {% if u.username != 'EASY' %}
               <a href="{{ url_for('admin.usuario_toggle', id=u.id) }}" class="btn btn-sm btn-outline-{{ 'danger' if u.activo else 'success' }}" title="{{ 'Desactivar' if u.activo else 'Activar' }}"
                  onclick="return confirm('¿Confirma esta acción?')">
                 <i class="bi bi-{{ 'toggle-on' if u.activo else 'toggle-off' }}"></i>
               </a>
+              {% endif %}
             </div>
           </td>
         </tr>
